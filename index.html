@@ -10,38 +10,66 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "system-ui", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
-    <header class="site-header">
-      <div class="site-title">
-        <span class="eyebrow">Washuta Family</span>
-        <h1>
-          Year in Review
-          <span class="year" id="review-year"></span>
-        </h1>
-        <p class="subtitle">
-          Swipe through each month to revisit the highlights, stories, and
-          snapshots that made this year ours.
-        </p>
-      </div>
-      <div class="header-pill">
-        <span>Scroll horizontally</span>
-        <span class="pill-dot"></span>
-        <span>Tap stacks to expand</span>
+  <body class="min-h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
+    <header class="px-6 pt-8 pb-4 md:px-10 md:pt-10">
+      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div class="max-w-xl space-y-3">
+          <span class="text-[0.65rem] uppercase tracking-[0.35em] text-slate-400">
+            Washuta Family
+          </span>
+          <h1 class="text-3xl font-semibold tracking-tight md:text-4xl">
+            Year in Review <span class="text-slate-500" id="review-year"></span>
+          </h1>
+          <p class="text-sm leading-6 text-slate-500">
+            Swipe through each month to revisit the highlights, stories, and
+            snapshots that made this year ours.
+          </p>
+        </div>
+        <div
+          class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[0.65rem] uppercase tracking-[0.2em] text-slate-400"
+        >
+          <span>Scroll</span>
+          <span class="h-1 w-1 rounded-full bg-slate-400"></span>
+          <span>Tap stacks</span>
+        </div>
       </div>
     </header>
 
-    <main class="timeline" id="timeline" aria-label="Year timeline"></main>
+    <main
+      class="timeline flex flex-1 snap-x snap-mandatory gap-6 overflow-x-auto overflow-y-auto px-6 pb-10 pt-4 md:px-10 md:pb-12"
+      id="timeline"
+      aria-label="Year timeline"
+    ></main>
 
-    <div class="lightbox" id="lightbox" aria-hidden="true" role="dialog">
+    <div
+      class="lightbox"
+      id="lightbox"
+      aria-hidden="true"
+      aria-label="Image preview"
+      aria-modal="true"
+      role="dialog"
+    >
       <div class="lightbox__backdrop" data-close></div>
       <div class="lightbox__content" role="document">
         <button class="lightbox__close" type="button" data-close aria-label="Close image">
           &times;
         </button>
         <img class="lightbox__image" alt="" />
-        <p class="lightbox__caption"></p>
+        <p class="lightbox__caption text-sm text-slate-500"></p>
       </div>
     </div>
 

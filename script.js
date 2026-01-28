@@ -3,6 +3,10 @@ const timelineEl = document.getElementById("timeline");
 const lightboxEl = document.getElementById("lightbox");
 const lightboxImage = lightboxEl.querySelector(".lightbox__image");
 const lightboxCaption = lightboxEl.querySelector(".lightbox__caption");
+const lightboxCloseButton = lightboxEl.querySelector(".lightbox__close");
+const pageSections = document.querySelectorAll("header, main");
+
+lightboxCaption.hidden = true;
 
 const reviewYear = new Date().getFullYear() - 1;
 reviewYearEl.textContent = reviewYear;
@@ -154,58 +158,142 @@ const months = [
   },
 ];
 
-const closeAllMonths = (except) => {
-  document.querySelectorAll(".month.is-open").forEach((month) => {
-    if (month === except) return;
-    month.classList.remove("is-open");
-    const button = month.querySelector(".image-stack");
-    const gallery = month.querySelector(".month-gallery");
-    button.setAttribute("aria-expanded", "false");
-    gallery.setAttribute("aria-hidden", "true");
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+
+const setPageInert = (isInert) => {
+  pageSections.forEach((section) => {
+    if (isInert) {
+      section.setAttribute("aria-hidden", "true");
+      if ("inert" in section) {
+        section.inert = true;
+      }
+      return;
+    }
+    section.removeAttribute("aria-hidden");
+    if ("inert" in section) {
+      section.inert = false;
+    }
   });
 };
 
+const setMonthState = (section, isOpen) => {
+  const stack = section.querySelector("[data-stack]");
+  const gallery = section.querySelector("[data-gallery]");
+
+  section.classList.toggle("is-open", isOpen);
+  stack.setAttribute("aria-expanded", `${isOpen}`);
+  stack.dataset.state = isOpen ? "open" : "closed";
+  gallery.setAttribute("aria-hidden", `${!isOpen}`);
+};
+
+const closeAllMonths = (except) => {
+  document.querySelectorAll(".month").forEach((section) => {
+    if (section === except) return;
+    if (!section.classList.contains("is-open")) return;
+    setMonthState(section, false);
+  });
+};
+
+let lastFocusedElement = null;
+
 const openLightbox = (src, caption) => {
+  lastFocusedElement = document.activeElement;
   lightboxImage.src = src;
-  lightboxImage.alt = caption;
-  lightboxCaption.textContent = caption;
+  lightboxImage.alt = caption || "Expanded photo";
+  lightboxCaption.textContent = caption || "";
+  lightboxCaption.hidden = !caption;
   lightboxEl.classList.add("is-open");
   lightboxEl.setAttribute("aria-hidden", "false");
+  setPageInert(true);
   document.body.classList.add("is-lightbox-open");
+  lightboxCloseButton.focus();
 };
 
 const closeLightbox = () => {
   lightboxEl.classList.remove("is-open");
   lightboxEl.setAttribute("aria-hidden", "true");
+  lightboxImage.src = "";
+  lightboxImage.alt = "";
+  lightboxCaption.textContent = "";
+  lightboxCaption.hidden = true;
+  setPageInert(false);
   document.body.classList.remove("is-lightbox-open");
+  if (lastFocusedElement) {
+    lastFocusedElement.focus();
+    lastFocusedElement = null;
+  }
+};
+
+const trapLightboxFocus = (event) => {
+  if (!lightboxEl.classList.contains("is-open")) return;
+  if (event.key !== "Tab") return;
+
+  const focusableSelectors =
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  const focusable = Array.from(lightboxEl.querySelectorAll(focusableSelectors)).filter(
+    (node) => !node.hasAttribute("disabled")
+  );
+
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 };
 
 const renderMonths = () => {
-  months.forEach((month, index) => {
+  months.forEach((month) => {
+    const slug = slugify(month.name);
     const section = document.createElement("section");
-    section.className = "month";
-    if (index === months.length - 1) {
-      section.classList.add("is-last");
-    }
+    section.className =
+      "month snap-start flex-shrink-0 w-[84vw] max-w-[420px] md:w-[44vw] md:max-w-[480px]";
+    section.id = `month-${slug}`;
 
-    const card = document.createElement("div");
-    card.className = "month-card";
+    const card = document.createElement("article");
+    card.className =
+      "month-card flex h-full flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)] transition-transform duration-500";
+    card.setAttribute("aria-labelledby", `${slug}-title`);
 
     const header = document.createElement("div");
-    header.className = "month-header";
-    header.innerHTML = `<h2>${month.name}</h2><span class="month-tag">${month.tag}</span>`;
+    header.className = "flex items-center justify-between gap-3";
+
+    const title = document.createElement("h2");
+    title.className = "text-lg font-semibold tracking-tight text-slate-900";
+    title.id = `${slug}-title`;
+    title.textContent = month.name;
+
+    const tag = document.createElement("span");
+    tag.className =
+      "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[0.62rem] font-medium uppercase tracking-[0.2em] text-slate-500";
+    tag.textContent = month.tag;
+
+    header.appendChild(title);
+    header.appendChild(tag);
 
     const stack = document.createElement("button");
-    stack.className = "image-stack";
+    stack.className = "stack";
     stack.type = "button";
+    stack.dataset.stack = "";
+    stack.dataset.state = "closed";
     stack.setAttribute("aria-expanded", "false");
-    stack.setAttribute("aria-label", `View ${month.name} gallery`);
+    stack.setAttribute("aria-controls", `${slug}-gallery`);
+    stack.setAttribute("aria-label", `Toggle ${month.name} gallery`);
 
     const stackImages = month.images.slice(0, 3);
     stackImages.forEach((image, idx) => {
       const frame = document.createElement("span");
       frame.className = "stack-item";
-      frame.style.setProperty("--i", idx);
+      frame.style.setProperty("--index", idx);
       frame.style.zIndex = 10 - idx;
 
       const img = document.createElement("img");
@@ -226,32 +314,42 @@ const renderMonths = () => {
     }
 
     const summary = document.createElement("p");
-    summary.className = "month-summary";
+    summary.className = "text-sm leading-6 text-slate-500";
     summary.textContent = month.summary;
 
     const gallery = document.createElement("div");
-    gallery.className = "month-gallery";
+    gallery.className = "month-gallery mt-3";
+    gallery.dataset.gallery = "";
+    gallery.id = `${slug}-gallery`;
+    gallery.setAttribute("role", "region");
+    gallery.setAttribute("aria-label", `${month.name} gallery`);
     gallery.setAttribute("aria-hidden", "true");
 
     const grid = document.createElement("div");
-    grid.className = "gallery-grid";
+    grid.className = "grid grid-cols-2 gap-3 md:grid-cols-3";
 
     month.images.forEach((image) => {
-      const figure = document.createElement("figure");
-      figure.className = "gallery-item";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className =
+        "gallery-item group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 text-left transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.1)]";
+      button.dataset.galleryItem = "";
+      button.dataset.src = image.src;
+      button.dataset.caption = image.caption;
+      button.setAttribute("aria-label", `Open ${month.name} photo: ${image.caption}`);
 
       const img = document.createElement("img");
       img.src = image.src;
       img.alt = image.caption;
       img.loading = "lazy";
-      img.dataset.caption = image.caption;
 
-      const caption = document.createElement("figcaption");
+      const caption = document.createElement("span");
+      caption.className = "px-3 py-2 text-[0.72rem] text-slate-500";
       caption.textContent = image.caption;
 
-      figure.appendChild(img);
-      figure.appendChild(caption);
-      grid.appendChild(figure);
+      button.appendChild(img);
+      button.appendChild(caption);
+      grid.appendChild(button);
     });
 
     gallery.appendChild(grid);
@@ -260,20 +358,14 @@ const renderMonths = () => {
     card.appendChild(summary);
     card.appendChild(gallery);
 
-    const step = document.createElement("div");
-    step.className = "timeline-step";
-    step.innerHTML = `<span class="step-dot"></span><span class="step-line"></span><span>${month.name}</span>`;
-
     section.appendChild(card);
-    section.appendChild(step);
     timelineEl.appendChild(section);
 
     stack.addEventListener("click", () => {
-      const isOpen = section.classList.toggle("is-open");
+      const shouldOpen = !section.classList.contains("is-open");
       closeAllMonths(section);
-      stack.setAttribute("aria-expanded", `${isOpen}`);
-      gallery.setAttribute("aria-hidden", `${!isOpen}`);
-      if (isOpen) {
+      setMonthState(section, shouldOpen);
+      if (shouldOpen) {
         gallery.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
       }
     });
@@ -283,10 +375,9 @@ const renderMonths = () => {
 renderMonths();
 
 timelineEl.addEventListener("click", (event) => {
-  const figure = event.target.closest(".gallery-item");
-  if (!figure) return;
-  const img = figure.querySelector("img");
-  openLightbox(img.src, img.dataset.caption || img.alt);
+  const button = event.target.closest("[data-gallery-item]");
+  if (!button) return;
+  openLightbox(button.dataset.src, button.dataset.caption);
 });
 
 lightboxEl.addEventListener("click", (event) => {
@@ -298,7 +389,9 @@ lightboxEl.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && lightboxEl.classList.contains("is-open")) {
     closeLightbox();
+    return;
   }
+  trapLightboxFocus(event);
 });
 
 timelineEl.addEventListener(
