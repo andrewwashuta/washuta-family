@@ -23,6 +23,7 @@ button {
 
 .timeline {
   scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
 }
 
 .month.is-open .month-card {
@@ -44,6 +45,7 @@ button {
   --stack-x: 14px;
   --stack-y: -10px;
   --stack-rotate: -3deg;
+  --stack-direction: 1;
 }
 
 .stack:focus-visible {
@@ -53,19 +55,19 @@ button {
 
 .stack-item {
   position: absolute;
-  bottom: 16px;
-  left: 16px;
+  bottom: 14px;
+  left: 50%;
   width: min(60%, 230px);
   aspect-ratio: 3 / 4;
   border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 18px 32px rgba(15, 23, 42, 0.18);
   transform: translate3d(
-      calc(var(--index) * var(--stack-x)),
+      calc(-50% + (var(--index) * var(--stack-x) * var(--stack-direction))),
       calc(var(--index) * var(--stack-y)),
       0
     )
-    rotate(calc(var(--index) * var(--stack-rotate)));
+    rotate(calc(var(--index) * var(--stack-rotate) * var(--stack-direction)));
   transition: transform 0.6s var(--ease), box-shadow 0.6s var(--ease);
   pointer-events: none;
 }
@@ -103,39 +105,7 @@ button {
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.22);
 }
 
-.month-gallery {
-  max-height: 0;
-  opacity: 0;
-  transform: translateY(-6px);
-  transition: max-height 0.6s var(--ease), opacity 0.4s var(--ease),
-    transform 0.4s var(--ease);
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.month.is-open .month-gallery {
-  max-height: 1200px;
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-.gallery-item {
-  outline: none;
-}
-
-.gallery-item img {
-  width: 100%;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-}
-
-.gallery-item:focus-visible {
-  outline: 2px solid #0f172a;
-  outline-offset: 3px;
-}
-
-.lightbox {
+.month-modal {
   position: fixed;
   inset: 0;
   display: flex;
@@ -144,44 +114,56 @@ button {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s var(--ease);
-  z-index: 50;
+  z-index: 60;
 }
 
-.lightbox__backdrop {
+.month-modal__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(8px);
 }
 
-.lightbox__content {
+.month-modal__panel {
   position: relative;
   z-index: 1;
   background: #ffffff;
-  border-radius: 24px;
-  padding: 18px 18px 22px;
-  max-width: min(92vw, 520px);
+  border-radius: 28px;
+  padding: 18px 18px 20px;
+  max-width: min(94vw, 620px);
   width: 100%;
-  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.25);
-  transform: translateY(16px) scale(0.98);
-  transition: transform 0.4s var(--ease);
+  max-height: min(92vh, 720px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 35px 90px rgba(15, 23, 42, 0.28);
+  transform: translateY(18px) scale(0.98);
+  transform-origin: var(--modal-origin-x, 50%) var(--modal-origin-y, 60%);
+  transition: transform 0.45s var(--ease);
 }
 
-.lightbox__image {
-  width: 100%;
-  border-radius: 18px;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
+.month-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.lightbox__caption {
-  margin: 12px 0 0;
+.month-modal__eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.55rem;
+  color: #94a3b8;
 }
 
-.lightbox__close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+.month-modal__title {
+  margin: 6px 0 0;
+  font-size: 1.2rem;
+  letter-spacing: -0.01em;
+}
+
+.month-modal__close {
   border: none;
   background: rgba(15, 23, 42, 0.9);
   color: #fff;
@@ -192,22 +174,112 @@ button {
   cursor: pointer;
 }
 
-.lightbox__close:focus-visible {
+.month-modal__close:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 3px;
 }
 
-.lightbox.is-open {
+.month-modal__scroller {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+}
+
+.month-modal__scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.month-modal__slide {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  padding: 0 4px;
+}
+
+.month-modal__slide img {
+  width: 100%;
+  border-radius: 22px;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+.month-modal__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.month-modal__caption {
+  line-height: 1.4;
+}
+
+.month-modal__count {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.month-modal__nav {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  pointer-events: none;
+}
+
+.month-modal__nav-btn {
+  pointer-events: auto;
+  border: none;
+  background: rgba(15, 23, 42, 0.85);
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease), opacity 0.3s var(--ease);
+}
+
+.month-modal__nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.month-modal__nav-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.month-modal.is-open {
   opacity: 1;
   pointer-events: auto;
 }
 
-.lightbox.is-open .lightbox__content {
+.month-modal.is-open .month-modal__panel {
   transform: translateY(0) scale(1);
 }
 
-.is-lightbox-open {
+.is-modal-open {
   overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .month-modal {
+    align-items: flex-end;
+  }
+
+  .month-modal__panel {
+    border-radius: 24px 24px 0 0;
+    max-height: 88vh;
+  }
 }
 
 @media (min-width: 900px) {
