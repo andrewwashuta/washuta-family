@@ -1,8 +1,16 @@
 const reviewYearEl = document.getElementById("review-year");
 const timelineEl = document.getElementById("timeline");
-const lightboxEl = document.getElementById("lightbox");
-const lightboxImage = lightboxEl.querySelector(".lightbox__image");
-const lightboxCaption = lightboxEl.querySelector(".lightbox__caption");
+const monthModal = document.getElementById("month-modal");
+const modalTitle = monthModal.querySelector("[data-modal-title]");
+const modalCaption = monthModal.querySelector("[data-modal-caption]");
+const modalCount = monthModal.querySelector("[data-modal-count]");
+const modalScroller = monthModal.querySelector("[data-modal-scroller]");
+const modalPrev = monthModal.querySelector("[data-modal-prev]");
+const modalNext = monthModal.querySelector("[data-modal-next]");
+const modalCloseButton = monthModal.querySelector(".month-modal__close");
+const pageSections = document.querySelectorAll("header, main");
+
+modalCaption.hidden = true;
 
 const reviewYear = new Date().getFullYear() - 1;
 reviewYearEl.textContent = reviewYear;
@@ -154,58 +162,214 @@ const months = [
   },
 ];
 
-const closeAllMonths = (except) => {
-  document.querySelectorAll(".month.is-open").forEach((month) => {
-    if (month === except) return;
-    month.classList.remove("is-open");
-    const button = month.querySelector(".image-stack");
-    const gallery = month.querySelector(".month-gallery");
-    button.setAttribute("aria-expanded", "false");
-    gallery.setAttribute("aria-hidden", "true");
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+
+const setPageInert = (isInert) => {
+  pageSections.forEach((section) => {
+    if (isInert) {
+      section.setAttribute("aria-hidden", "true");
+      if ("inert" in section) {
+        section.inert = true;
+      }
+      return;
+    }
+    section.removeAttribute("aria-hidden");
+    if ("inert" in section) {
+      section.inert = false;
+    }
   });
 };
 
-const openLightbox = (src, caption) => {
-  lightboxImage.src = src;
-  lightboxImage.alt = caption;
-  lightboxCaption.textContent = caption;
-  lightboxEl.classList.add("is-open");
-  lightboxEl.setAttribute("aria-hidden", "false");
-  document.body.classList.add("is-lightbox-open");
+const setMonthState = (section, isOpen) => {
+  const stack = section.querySelector("[data-stack]");
+  section.classList.toggle("is-open", isOpen);
+  stack.setAttribute("aria-expanded", `${isOpen}`);
+  stack.dataset.state = isOpen ? "open" : "closed";
 };
 
-const closeLightbox = () => {
-  lightboxEl.classList.remove("is-open");
-  lightboxEl.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("is-lightbox-open");
+const closeAllMonths = (except) => {
+  document.querySelectorAll(".month").forEach((section) => {
+    if (section === except) return;
+    if (!section.classList.contains("is-open")) return;
+    setMonthState(section, false);
+  });
+};
+
+let lastFocusedElement = null;
+let activeSection = null;
+let activeIndex = 0;
+let modalScrollRaf = null;
+
+const updateModalMeta = () => {
+  const total = modalScroller.children.length;
+  if (!total) return;
+  const width = modalScroller.clientWidth || 1;
+  const nextIndex = Math.max(0, Math.min(total - 1, Math.round(modalScroller.scrollLeft / width)));
+  activeIndex = nextIndex;
+  const slide = modalScroller.children[activeIndex];
+  const caption = slide?.dataset.caption || "";
+  modalCaption.textContent = caption;
+  modalCaption.hidden = caption.length === 0;
+  modalCount.textContent = `${activeIndex + 1} / ${total}`;
+  modalPrev.disabled = activeIndex === 0;
+  modalNext.disabled = activeIndex === total - 1;
+};
+
+const handleModalScroll = () => {
+  if (modalScrollRaf) return;
+  modalScrollRaf = window.requestAnimationFrame(() => {
+    modalScrollRaf = null;
+    updateModalMeta();
+  });
+};
+
+const scrollToIndex = (index) => {
+  const total = modalScroller.children.length;
+  if (total === 0) return;
+  const clamped = Math.max(0, Math.min(total - 1, index));
+  const width = modalScroller.clientWidth || 1;
+  modalScroller.scrollTo({ left: width * clamped, behavior: "smooth" });
+};
+
+const buildSlides = (images) => {
+  modalScroller.innerHTML = "";
+  images.forEach((image, index) => {
+    const slide = document.createElement("div");
+    slide.className = "month-modal__slide";
+    slide.dataset.caption = image.caption;
+    slide.setAttribute("role", "group");
+    slide.setAttribute("aria-label", `${index + 1} of ${images.length}`);
+
+    const img = document.createElement("img");
+    img.src = image.src;
+    img.alt = image.caption;
+    img.loading = "lazy";
+
+    slide.appendChild(img);
+    modalScroller.appendChild(slide);
+  });
+};
+
+const openMonthModal = (month, originEl) => {
+  lastFocusedElement = document.activeElement;
+  activeSection = originEl?.closest(".month") ?? null;
+  closeAllMonths(activeSection);
+  if (activeSection) {
+    setMonthState(activeSection, true);
+  }
+
+  if (originEl) {
+    const rect = originEl.getBoundingClientRect();
+    const originX = ((rect.left + rect.width / 2) / window.innerWidth) * 100;
+    const originY = ((rect.top + rect.height / 2) / window.innerHeight) * 100;
+    monthModal.style.setProperty("--modal-origin-x", `${originX}%`);
+    monthModal.style.setProperty("--modal-origin-y", `${originY}%`);
+  }
+
+  buildSlides(month.images);
+  modalTitle.textContent = month.name;
+  modalScroller.scrollLeft = 0;
+  activeIndex = 0;
+  updateModalMeta();
+
+  monthModal.classList.add("is-open");
+  monthModal.setAttribute("aria-hidden", "false");
+  setPageInert(true);
+  document.body.classList.add("is-modal-open");
+  modalCloseButton.focus();
+};
+
+const closeMonthModal = () => {
+  monthModal.classList.remove("is-open");
+  monthModal.setAttribute("aria-hidden", "true");
+  modalScroller.innerHTML = "";
+  modalTitle.textContent = "";
+  modalCaption.textContent = "";
+  modalCaption.hidden = true;
+  modalCount.textContent = "";
+  setPageInert(false);
+  document.body.classList.remove("is-modal-open");
+  if (activeSection) {
+    setMonthState(activeSection, false);
+    activeSection = null;
+  }
+  if (lastFocusedElement) {
+    lastFocusedElement.focus();
+    lastFocusedElement = null;
+  }
+};
+
+const trapModalFocus = (event) => {
+  if (!monthModal.classList.contains("is-open")) return;
+  if (event.key !== "Tab") return;
+
+  const focusableSelectors =
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  const focusable = Array.from(monthModal.querySelectorAll(focusableSelectors)).filter(
+    (node) => !node.hasAttribute("disabled")
+  );
+
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 };
 
 const renderMonths = () => {
   months.forEach((month, index) => {
+    const slug = slugify(month.name);
     const section = document.createElement("section");
-    section.className = "month";
-    if (index === months.length - 1) {
-      section.classList.add("is-last");
-    }
+    section.className =
+      "month snap-start flex-shrink-0 w-[84vw] max-w-[420px] md:w-[44vw] md:max-w-[480px]";
+    section.id = `month-${slug}`;
 
-    const card = document.createElement("div");
-    card.className = "month-card";
+    const card = document.createElement("article");
+    card.className =
+      "month-card flex h-full flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)] transition-transform duration-500";
+    card.setAttribute("aria-labelledby", `${slug}-title`);
 
     const header = document.createElement("div");
-    header.className = "month-header";
-    header.innerHTML = `<h2>${month.name}</h2><span class="month-tag">${month.tag}</span>`;
+    header.className = "flex items-center justify-between gap-3";
+
+    const title = document.createElement("h2");
+    title.className = "text-lg font-semibold tracking-tight text-slate-900";
+    title.id = `${slug}-title`;
+    title.textContent = month.name;
+
+    const tag = document.createElement("span");
+    tag.className =
+      "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[0.62rem] font-medium uppercase tracking-[0.2em] text-slate-500";
+    tag.textContent = month.tag;
+
+    header.appendChild(title);
+    header.appendChild(tag);
 
     const stack = document.createElement("button");
-    stack.className = "image-stack";
+    stack.className = "stack";
     stack.type = "button";
+    stack.dataset.stack = "";
+    stack.dataset.state = "closed";
     stack.setAttribute("aria-expanded", "false");
-    stack.setAttribute("aria-label", `View ${month.name} gallery`);
+    stack.setAttribute("aria-haspopup", "dialog");
+    stack.setAttribute("aria-label", `Open ${month.name} photos`);
+    stack.style.setProperty("--stack-direction", index % 2 === 0 ? "1" : "-1");
 
     const stackImages = month.images.slice(0, 3);
     stackImages.forEach((image, idx) => {
       const frame = document.createElement("span");
       frame.className = "stack-item";
-      frame.style.setProperty("--i", idx);
+      frame.style.setProperty("--index", idx);
       frame.style.zIndex = 10 - idx;
 
       const img = document.createElement("img");
@@ -226,89 +390,56 @@ const renderMonths = () => {
     }
 
     const summary = document.createElement("p");
-    summary.className = "month-summary";
+    summary.className = "text-sm leading-6 text-slate-500";
     summary.textContent = month.summary;
 
-    const gallery = document.createElement("div");
-    gallery.className = "month-gallery";
-    gallery.setAttribute("aria-hidden", "true");
-
-    const grid = document.createElement("div");
-    grid.className = "gallery-grid";
-
-    month.images.forEach((image) => {
-      const figure = document.createElement("figure");
-      figure.className = "gallery-item";
-
-      const img = document.createElement("img");
-      img.src = image.src;
-      img.alt = image.caption;
-      img.loading = "lazy";
-      img.dataset.caption = image.caption;
-
-      const caption = document.createElement("figcaption");
-      caption.textContent = image.caption;
-
-      figure.appendChild(img);
-      figure.appendChild(caption);
-      grid.appendChild(figure);
-    });
-
-    gallery.appendChild(grid);
     card.appendChild(header);
     card.appendChild(stack);
     card.appendChild(summary);
-    card.appendChild(gallery);
-
-    const step = document.createElement("div");
-    step.className = "timeline-step";
-    step.innerHTML = `<span class="step-dot"></span><span class="step-line"></span><span>${month.name}</span>`;
 
     section.appendChild(card);
-    section.appendChild(step);
     timelineEl.appendChild(section);
 
     stack.addEventListener("click", () => {
-      const isOpen = section.classList.toggle("is-open");
-      closeAllMonths(section);
-      stack.setAttribute("aria-expanded", `${isOpen}`);
-      gallery.setAttribute("aria-hidden", `${!isOpen}`);
-      if (isOpen) {
-        gallery.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
-      }
+      openMonthModal(month, stack);
     });
   });
 };
 
 renderMonths();
 
-timelineEl.addEventListener("click", (event) => {
-  const figure = event.target.closest(".gallery-item");
-  if (!figure) return;
-  const img = figure.querySelector("img");
-  openLightbox(img.src, img.dataset.caption || img.alt);
+modalPrev.addEventListener("click", () => {
+  scrollToIndex(activeIndex - 1);
 });
 
-lightboxEl.addEventListener("click", (event) => {
+modalNext.addEventListener("click", () => {
+  scrollToIndex(activeIndex + 1);
+});
+
+modalScroller.addEventListener("scroll", handleModalScroll);
+
+monthModal.addEventListener("click", (event) => {
   if (event.target.matches("[data-close]")) {
-    closeLightbox();
+    closeMonthModal();
   }
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && lightboxEl.classList.contains("is-open")) {
-    closeLightbox();
+  if (monthModal.classList.contains("is-open")) {
+    if (event.key === "Escape") {
+      closeMonthModal();
+      return;
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      scrollToIndex(activeIndex + 1);
+      return;
+    }
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      scrollToIndex(activeIndex - 1);
+      return;
+    }
   }
+  trapModalFocus(event);
 });
-
-timelineEl.addEventListener(
-  "wheel",
-  (event) => {
-    const hasVerticalOverflow = timelineEl.scrollHeight > timelineEl.clientHeight;
-    if (hasVerticalOverflow) return;
-    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-    timelineEl.scrollBy({ left: event.deltaY, behavior: "smooth" });
-    event.preventDefault();
-  },
-  { passive: false }
-);
