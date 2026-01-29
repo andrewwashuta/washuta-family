@@ -158,9 +158,9 @@ button {
   white-space: nowrap;
 }
 
-.image-stack {
+.image-preview {
   position: relative;
-  height: 230px;
+  width: 100%;
   border: none;
   padding: 0;
   background: transparent;
@@ -169,10 +169,68 @@ button {
   transition: transform 0.5s var(--easing);
 }
 
-.image-stack:focus-visible {
+.image-preview:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 6px;
   border-radius: 18px;
+}
+
+.image-preview.preview--stack {
+  height: 230px;
+}
+
+.image-preview.preview--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 10px;
+  height: 230px;
+}
+
+.preview-tile {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+  aspect-ratio: var(--frame-ratio, 1 / 1);
+}
+
+.preview-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-count {
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  font-size: 1rem;
+}
+
+.layout-label {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.layout-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(81, 101, 255, 0.12);
+  display: inline-block;
 }
 
 .stack-item {
@@ -181,7 +239,7 @@ button {
   left: 18px;
   width: 58%;
   max-width: 220px;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: var(--frame-ratio, 3 / 4);
   border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 18px 32px rgba(15, 23, 42, 0.18);
@@ -208,11 +266,11 @@ button {
   letter-spacing: 0.04em;
 }
 
-.month.is-open .image-stack {
+.month.is-open .image-preview {
   transform: translateY(-2px);
 }
 
-.month.is-open .stack-item {
+.month.is-open .preview--stack .stack-item {
   transform: translate(calc(var(--i) * 18px), calc(var(--i) * -8px))
     rotate(calc(var(--i) * -2deg));
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.22);
@@ -251,7 +309,6 @@ button {
   margin: 0;
   background: #f8fafc;
   border-radius: 16px;
-  overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.2);
   display: flex;
   flex-direction: column;
@@ -264,9 +321,17 @@ button {
   box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
 }
 
-.gallery-item img {
+.gallery-media {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #f1f5f9;
+  aspect-ratio: var(--frame-ratio, 4 / 5);
+}
+
+.gallery-media img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -339,9 +404,10 @@ button {
 
 .lightbox__image {
   width: 100%;
+  max-height: 65vh;
   border-radius: 16px;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
+  object-fit: contain;
+  background: #f8fafc;
 }
 
 .lightbox__caption {
@@ -397,7 +463,8 @@ button {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .image-stack {
+  .image-preview.preview--stack,
+  .image-preview.preview--grid {
     height: 260px;
   }
 

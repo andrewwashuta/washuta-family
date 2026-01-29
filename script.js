@@ -11,10 +11,12 @@ const months = [
   {
     name: "January",
     tag: "Fresh starts",
+    layout: "stack",
+    layoutLabel: "Preview style: Stacked frames",
     summary:
       "Cozy mornings, hot cocoa after sled rides, and a new tradition of Sunday waffles.",
     images: [
-      { src: "https://picsum.photos/seed/jan-1/900/1200", caption: "Snowy backyard adventures." },
+      { src: "https://picsum.photos/seed/jan-1/1200/900", caption: "Snowy backyard adventures." },
       { src: "https://picsum.photos/seed/jan-2/900/1200", caption: "The annual puzzle marathon." },
       { src: "https://picsum.photos/seed/jan-3/900/1200", caption: "Quiet library afternoons." },
       { src: "https://picsum.photos/seed/jan-4/900/1200", caption: "Fireside story time." },
@@ -23,22 +25,30 @@ const months = [
   {
     name: "February",
     tag: "Warm hearts",
+    layout: "grid-count",
+    layoutLabel: "Preview style: Grid + count",
     summary:
       "Handmade valentines, a surprise snow day, and a living room dance party.",
     images: [
-      { src: "https://picsum.photos/seed/feb-1/900/1200", caption: "Glittery valentines on display." },
+      { src: "https://picsum.photos/seed/feb-1/1200/900", caption: "Glittery valentines on display." },
       { src: "https://picsum.photos/seed/feb-2/900/1200", caption: "Snowball mission in the park." },
-      { src: "https://picsum.photos/seed/feb-3/900/1200", caption: "Homemade heart-shaped pizzas." },
+      { src: "https://picsum.photos/seed/feb-3/1200/900", caption: "Homemade heart-shaped pizzas." },
       { src: "https://picsum.photos/seed/feb-4/900/1200", caption: "Movie night cocoa station." },
+      { src: "https://picsum.photos/seed/feb-5/1200/900", caption: "Paper garlands everywhere." },
+      { src: "https://picsum.photos/seed/feb-6/900/1200", caption: "Dessert tasting lineup." },
+      { src: "https://picsum.photos/seed/feb-7/1200/900", caption: "Surprise snowman build." },
+      { src: "https://picsum.photos/seed/feb-8/900/1200", caption: "Cozy story corner." },
     ],
   },
   {
     name: "March",
     tag: "First blooms",
+    layout: "grid-four",
+    layoutLabel: "Preview style: Four-up grid",
     summary:
       "Early hikes, garden prep, and the first picnic of the season by the lake.",
     images: [
-      { src: "https://picsum.photos/seed/mar-1/900/1200", caption: "Windy trail smiles." },
+      { src: "https://picsum.photos/seed/mar-1/1200/900", caption: "Windy trail smiles." },
       { src: "https://picsum.photos/seed/mar-2/900/1200", caption: "Planting seedlings together." },
       { src: "https://picsum.photos/seed/mar-3/900/1200", caption: "Picnic blanket + sunshine." },
       { src: "https://picsum.photos/seed/mar-4/900/1200", caption: "Rainy day fort building." },
@@ -158,7 +168,7 @@ const closeAllMonths = (except) => {
   document.querySelectorAll(".month.is-open").forEach((month) => {
     if (month === except) return;
     month.classList.remove("is-open");
-    const button = month.querySelector(".image-stack");
+    const button = month.querySelector(".image-preview");
     const gallery = month.querySelector(".month-gallery");
     button.setAttribute("aria-expanded", "false");
     gallery.setAttribute("aria-hidden", "true");
@@ -180,6 +190,28 @@ const closeLightbox = () => {
   document.body.classList.remove("is-lightbox-open");
 };
 
+const setFrameRatio = (img, frame) => {
+  const applyRatio = () => {
+    const width = img.naturalWidth;
+    const height = img.naturalHeight;
+    if (!width || !height) return;
+    const ratio = width / height;
+    let frameRatio = "3 / 4";
+    if (ratio > 1.2) {
+      frameRatio = "4 / 3";
+    } else if (ratio > 0.9) {
+      frameRatio = "1 / 1";
+    }
+    frame.style.setProperty("--frame-ratio", frameRatio);
+  };
+
+  if (img.complete) {
+    applyRatio();
+  } else {
+    img.addEventListener("load", applyRatio, { once: true });
+  }
+};
+
 const renderMonths = () => {
   months.forEach((month, index) => {
     const section = document.createElement("section");
@@ -195,34 +227,81 @@ const renderMonths = () => {
     header.className = "month-header";
     header.innerHTML = `<h2>${month.name}</h2><span class="month-tag">${month.tag}</span>`;
 
-    const stack = document.createElement("button");
-    stack.className = "image-stack";
-    stack.type = "button";
-    stack.setAttribute("aria-expanded", "false");
-    stack.setAttribute("aria-label", `View ${month.name} gallery`);
+    let layoutLabel = null;
+    if (month.layoutLabel) {
+      layoutLabel = document.createElement("p");
+      layoutLabel.className = "layout-label";
+      layoutLabel.textContent = month.layoutLabel;
+    }
 
-    const stackImages = month.images.slice(0, 3);
-    stackImages.forEach((image, idx) => {
-      const frame = document.createElement("span");
-      frame.className = "stack-item";
-      frame.style.setProperty("--i", idx);
-      frame.style.zIndex = 10 - idx;
+    const preview = document.createElement("button");
+    const layout = month.layout || "stack";
+    preview.className = "image-preview";
+    preview.classList.add(layout === "stack" ? "preview--stack" : "preview--grid");
+    if (layout !== "stack") {
+      preview.classList.add(`preview--${layout}`);
+    }
+    preview.type = "button";
+    preview.setAttribute("aria-expanded", "false");
+    preview.setAttribute("aria-label", `View ${month.name} gallery`);
 
-      const img = document.createElement("img");
-      img.src = image.src;
-      img.alt = image.caption;
-      img.loading = "lazy";
+    if (layout === "stack") {
+      const stackImages = month.images.slice(0, 3);
+      stackImages.forEach((image, idx) => {
+        const frame = document.createElement("span");
+        frame.className = "stack-item";
+        frame.style.setProperty("--i", idx);
+        frame.style.zIndex = 10 - idx;
 
-      frame.appendChild(img);
-      stack.appendChild(frame);
-    });
+        const img = document.createElement("img");
+        img.src = image.src;
+        img.alt = image.caption;
+        img.loading = "lazy";
+        setFrameRatio(img, frame);
 
-    const remaining = month.images.length - stackImages.length;
-    if (remaining > 0) {
-      const count = document.createElement("span");
-      count.className = "stack-count";
-      count.textContent = `+${remaining}`;
-      stack.appendChild(count);
+        frame.appendChild(img);
+        preview.appendChild(frame);
+      });
+
+      const remaining = month.images.length - stackImages.length;
+      if (remaining > 0) {
+        const count = document.createElement("span");
+        count.className = "stack-count";
+        count.textContent = `+${remaining}`;
+        preview.appendChild(count);
+      }
+    } else {
+      const gridImages = month.images.slice(0, layout === "grid-count" ? 3 : 4);
+      gridImages.forEach((image) => {
+        const tile = document.createElement("span");
+        tile.className = "preview-tile";
+
+        const img = document.createElement("img");
+        img.src = image.src;
+        img.alt = image.caption;
+        img.loading = "lazy";
+        setFrameRatio(img, tile);
+
+        tile.appendChild(img);
+        preview.appendChild(tile);
+      });
+
+      if (layout === "grid-count") {
+        const remaining = month.images.length - gridImages.length;
+        const tile = document.createElement("span");
+        tile.className = "preview-tile preview-count";
+        if (remaining > 0) {
+          tile.textContent = `+${remaining}`;
+        } else if (month.images[3]) {
+          const img = document.createElement("img");
+          img.src = month.images[3].src;
+          img.alt = month.images[3].caption;
+          img.loading = "lazy";
+          setFrameRatio(img, tile);
+          tile.appendChild(img);
+        }
+        preview.appendChild(tile);
+      }
     }
 
     const summary = document.createElement("p");
@@ -240,23 +319,31 @@ const renderMonths = () => {
       const figure = document.createElement("figure");
       figure.className = "gallery-item";
 
+      const media = document.createElement("div");
+      media.className = "gallery-media";
+
       const img = document.createElement("img");
       img.src = image.src;
       img.alt = image.caption;
       img.loading = "lazy";
       img.dataset.caption = image.caption;
+      setFrameRatio(img, media);
 
       const caption = document.createElement("figcaption");
       caption.textContent = image.caption;
 
-      figure.appendChild(img);
+      media.appendChild(img);
+      figure.appendChild(media);
       figure.appendChild(caption);
       grid.appendChild(figure);
     });
 
     gallery.appendChild(grid);
     card.appendChild(header);
-    card.appendChild(stack);
+    if (layoutLabel) {
+      card.appendChild(layoutLabel);
+    }
+    card.appendChild(preview);
     card.appendChild(summary);
     card.appendChild(gallery);
 
@@ -268,10 +355,10 @@ const renderMonths = () => {
     section.appendChild(step);
     timelineEl.appendChild(section);
 
-    stack.addEventListener("click", () => {
+    preview.addEventListener("click", () => {
       const isOpen = section.classList.toggle("is-open");
       closeAllMonths(section);
-      stack.setAttribute("aria-expanded", `${isOpen}`);
+      preview.setAttribute("aria-expanded", `${isOpen}`);
       gallery.setAttribute("aria-hidden", `${!isOpen}`);
       if (isOpen) {
         gallery.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
