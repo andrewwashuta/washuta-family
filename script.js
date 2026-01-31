@@ -337,7 +337,7 @@ const renderMonths = () => {
 
     const card = document.createElement("article");
     card.className =
-      "month-card group flex h-full flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-stone-300 hover:-transtone-y-1 active:scale-[0.99]";
+      "month-card group flex h-full flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-stone-300 hover:-translate-y-1 active:scale-[0.99]";
     card.setAttribute("aria-labelledby", `${slug}-title`);
     card.setAttribute("role", "button");
     card.setAttribute("tabindex", "0");

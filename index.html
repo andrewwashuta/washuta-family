@@ -63,11 +63,11 @@
       aria-modal="true"
       role="dialog"
     >
-      <div class="month-modal__backdrop" data-close></div>
-      <div class="month-modal__panel" role="document">
-        <div class="month-modal__header">
-          <h2 class="month-modal__title" data-modal-title></h2>
-          <button class="month-modal__close" type="button" data-close aria-label="Close month">
+      <div class="month-modal__backdrop bg-stone-900/0 backdrop-blur-0 transition-all duration-200" data-close></div>
+      <div class="month-modal__panel relative z-10 bg-white rounded-3xl p-4 w-full max-w-[min(94vw,620px)] max-h-[min(92vh,720px)] flex flex-col gap-3 shadow-2xl" role="document">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-xl font-semibold tracking-tight text-stone-900" data-modal-title></h2>
+          <button class="w-8 h-8 rounded-full bg-stone-900/90 text-white text-xl flex items-center justify-center hover:bg-stone-900 hover:scale-105 active:scale-95 transition-all" type="button" data-close aria-label="Close month">
             &times;
           </button>
         </div>
@@ -77,13 +77,13 @@
           tabindex="0"
           aria-label="Swipe to browse photos"
         ></div>
-        <div class="month-modal__footer">
-          <span class="month-modal__caption" data-modal-caption></span>
-          <span class="month-modal__count" data-modal-count></span>
+        <div class="flex justify-between gap-4 text-sm text-stone-500">
+          <span data-modal-caption></span>
+          <span class="tabular-nums whitespace-nowrap" data-modal-count></span>
         </div>
-        <div class="month-modal__nav">
+        <div class="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
           <button
-            class="month-modal__nav-btn"
+            class="pointer-events-auto w-9 h-9 rounded-full bg-stone-900/85 text-white grid place-items-center hover:bg-stone-900 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-default transition-all"
             type="button"
             data-modal-prev
             aria-label="Previous photo"
@@ -91,7 +91,7 @@
             &larr;
           </button>
           <button
-            class="month-modal__nav-btn"
+            class="pointer-events-auto w-9 h-9 rounded-full bg-stone-900/85 text-white grid place-items-center hover:bg-stone-900 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-default transition-all"
             type="button"
             data-modal-next
             aria-label="Next photo"
