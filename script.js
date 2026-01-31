@@ -186,9 +186,14 @@ const setPageInert = (isInert) => {
 
 const setMonthState = (section, isOpen) => {
   const stack = section.querySelector("[data-stack]");
+  const card = section.querySelector(".month-card");
   section.classList.toggle("is-open", isOpen);
-  stack.setAttribute("aria-expanded", `${isOpen}`);
-  stack.dataset.state = isOpen ? "open" : "closed";
+  if (stack) {
+    stack.dataset.state = isOpen ? "open" : "closed";
+  }
+  if (card) {
+    card.setAttribute("aria-expanded", `${isOpen}`);
+  }
 };
 
 const closeAllMonths = (except) => {
@@ -331,38 +336,33 @@ const renderMonths = () => {
     const slug = slugify(month.name);
     const section = document.createElement("section");
     section.className =
-      "month snap-start flex-shrink-0 w-[84vw] max-w-[420px] md:w-[44vw] md:max-w-[480px]";
+      "month flex-shrink-0 w-[84vw] max-w-[420px] md:w-[44vw] md:max-w-[480px]";
     section.id = `month-${slug}`;
 
     const card = document.createElement("article");
     card.className =
-      "month-card flex h-full flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)] transition-transform duration-500";
+      "month-card flex h-full flex-col gap-4 rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)] cursor-pointer transition-all duration-300";
     card.setAttribute("aria-labelledby", `${slug}-title`);
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("aria-haspopup", "dialog");
+    card.setAttribute("aria-label", `View ${month.name} photos`);
 
     const header = document.createElement("div");
-    header.className = "flex items-center justify-between gap-3";
+    header.className = "flex items-center gap-3";
 
     const title = document.createElement("h2");
     title.className = "text-lg font-semibold tracking-tight text-slate-900";
     title.id = `${slug}-title`;
     title.textContent = month.name;
 
-    const tag = document.createElement("span");
-    tag.className =
-      "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[0.62rem] font-medium uppercase tracking-[0.2em] text-slate-500";
-    tag.textContent = month.tag;
-
     header.appendChild(title);
-    header.appendChild(tag);
 
-    const stack = document.createElement("button");
+    const stack = document.createElement("div");
     stack.className = "stack";
-    stack.type = "button";
     stack.dataset.stack = "";
     stack.dataset.state = "closed";
-    stack.setAttribute("aria-expanded", "false");
-    stack.setAttribute("aria-haspopup", "dialog");
-    stack.setAttribute("aria-label", `Open ${month.name} photos`);
+    stack.setAttribute("aria-hidden", "true");
     stack.style.setProperty("--stack-direction", index % 2 === 0 ? "1" : "-1");
 
     const stackImages = month.images.slice(0, 3);
@@ -400,8 +400,17 @@ const renderMonths = () => {
     section.appendChild(card);
     timelineEl.appendChild(section);
 
-    stack.addEventListener("click", () => {
-      openMonthModal(month, stack);
+    // Make entire card clickable
+    const handleCardClick = () => {
+      openMonthModal(month, card);
+    };
+
+    card.addEventListener("click", handleCardClick);
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleCardClick();
+      }
     });
   });
 };
