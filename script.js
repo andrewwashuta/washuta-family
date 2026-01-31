@@ -337,7 +337,7 @@ const renderMonths = () => {
 
     const card = document.createElement("article");
     card.className =
-      "month-card group flex h-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-slate-300 hover:-translate-y-1 active:scale-[0.99]";
+      "month-card group flex h-full flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-stone-300 hover:-transtone-y-1 active:scale-[0.99]";
     card.setAttribute("aria-labelledby", `${slug}-title`);
     card.setAttribute("role", "button");
     card.setAttribute("tabindex", "0");
@@ -349,12 +349,12 @@ const renderMonths = () => {
     header.className = "flex items-center justify-between";
 
     const title = document.createElement("h2");
-    title.className = "text-lg font-semibold tracking-tight text-slate-900";
+    title.className = "text-lg font-semibold tracking-tight text-stone-900";
     title.id = `${slug}-title`;
     title.textContent = month.name;
 
     const photoCount = document.createElement("span");
-    photoCount.className = "text-xs text-slate-400";
+    photoCount.className = "text-xs text-stone-400";
     photoCount.textContent = `${month.images.length} photos`;
 
     header.appendChild(title);
@@ -384,15 +384,15 @@ const renderMonths = () => {
 
     // Summary text
     const summary = document.createElement("p");
-    summary.className = "text-sm leading-relaxed text-slate-600 flex-1";
+    summary.className = "text-sm leading-relaxed text-stone-600 flex-1";
     summary.textContent = month.summary;
 
     // Highlights/details section
     const details = document.createElement("div");
-    details.className = "pt-3 border-t border-slate-100";
+    details.className = "pt-3 border-t border-stone-100";
 
     const detailText = document.createElement("p");
-    detailText.className = "text-xs text-slate-400 leading-relaxed";
+    detailText.className = "text-xs text-stone-400 leading-relaxed";
     detailText.textContent = month.highlights || "Tap to view all photos and memories from this month.";
 
     details.appendChild(detailText);
