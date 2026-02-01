@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MNKY Banana Grotesk Font */
+@font-face {
+  font-family: "MNKY Grotesk";
+  src: url("/fonts/mnkybananagrotesk-regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MNKY Grotesk";
+  src: url("/fonts/mnkybananagrotesk-medium.woff") format("woff");
+  font-weight: 500 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-mnky: "MNKY Grotesk", system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-mnky);
+}
