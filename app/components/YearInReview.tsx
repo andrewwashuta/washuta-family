@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, MapPin, Image as ImageIcon, Calendar } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 // --- Family Photo Data ---
 const YEAR_DATA = [
@@ -215,7 +216,7 @@ const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: stri
   };
 
   return (
-    <div className="relative w-full h-64 md:h-80 bg-neutral-800 rounded-2xl overflow-hidden group shadow-inner">
+    <div className="relative w-full h-64 md:h-80 bg-[var(--bg-tertiary)] rounded-2xl overflow-hidden group shadow-inner">
       <AnimatePresence mode='wait'>
         <motion.img
           key={index}
@@ -297,7 +298,12 @@ export default function YearInReview() {
   const totalPhotos = YEAR_DATA.reduce((acc, month) => acc + month.stats.photos, 0);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-rose-500/30">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans transition-colors duration-300">
+
+      {/* Theme Toggle - Fixed Position */}
+      <div className="fixed top-6 right-6 z-40">
+        <ThemeToggle />
+      </div>
 
       {/* --- Header --- */}
       <div className="relative pt-20 pb-12 px-6 md:px-12 max-w-7xl mx-auto">
@@ -306,25 +312,25 @@ export default function YearInReview() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <p className="text-rose-500 font-medium tracking-widest uppercase mb-4 text-sm">Washuta Family Recap</p>
-          <h1 className="text-6xl md:text-9xl font-bold tracking-tighter mb-6 bg-gradient-to-br from-white via-neutral-200 to-neutral-600 bg-clip-text text-transparent">
+          <p className="text-[var(--accent-text)] font-medium tracking-widest uppercase mb-4 text-sm">Washuta Family Recap</p>
+          <h1 className="text-6xl md:text-9xl font-bold tracking-tighter mb-6 bg-gradient-to-br from-[var(--gradient-text-from)] via-[var(--gradient-text-via)] to-[var(--gradient-text-to)] bg-clip-text text-transparent">
             2024
           </h1>
-          <div className="flex flex-col md:flex-row md:items-end gap-6 border-t border-white/10 pt-8">
-            <p className="text-lg text-neutral-400 max-w-md leading-relaxed">
+          <div className="flex flex-col md:flex-row md:items-end gap-6 border-t border-[var(--border-subtle)] pt-8">
+            <p className="text-lg text-[var(--text-tertiary)] max-w-md leading-relaxed">
               A visual collection of our year. From snowy mornings to summer adventures, these are the moments we'll remember forever.
             </p>
-            <div className="ml-auto flex gap-8 text-neutral-500 text-sm">
+            <div className="ml-auto flex gap-8 text-[var(--text-muted)] text-sm">
               <div>
-                <span className="block text-white font-bold text-xl">12</span>
+                <span className="block text-[var(--text-primary)] font-bold text-xl">12</span>
                 <span>Months</span>
               </div>
               <div>
-                <span className="block text-white font-bold text-xl">{totalPhotos}</span>
+                <span className="block text-[var(--text-primary)] font-bold text-xl">{totalPhotos}</span>
                 <span>Photos</span>
               </div>
               <div>
-                <span className="block text-white font-bold text-xl">∞</span>
+                <span className="block text-[var(--text-primary)] font-bold text-xl">∞</span>
                 <span>Memories</span>
               </div>
             </div>
@@ -345,7 +351,8 @@ export default function YearInReview() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
               whileHover={{ scale: 1.02 }}
-              className="relative group cursor-pointer rounded-3xl overflow-hidden bg-neutral-900 border border-white/5 shadow-xl hover:shadow-2xl hover:shadow-rose-500/10 transition-all"
+              className="relative group cursor-pointer rounded-3xl overflow-hidden bg-[var(--bg-secondary)] border border-[var(--border-muted)] shadow-xl hover:shadow-2xl transition-all"
+              style={{ boxShadow: 'var(--shadow-color) 0px 10px 40px -10px' }}
             >
               {/* Background Image */}
               <motion.div layoutId={`img-container-${month.id}`} className="absolute inset-0">
@@ -392,18 +399,18 @@ export default function YearInReview() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedId(null)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              className="absolute inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-md"
             />
 
             {/* Modal Card */}
             <motion.div
               layoutId={`card-${selectedId}`}
-              className="relative w-full max-w-5xl h-full md:h-auto max-h-[90vh] bg-neutral-900 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 flex flex-col md:flex-row"
+              className="relative w-full max-w-5xl h-full md:h-auto max-h-[90vh] bg-[var(--bg-elevated)] rounded-[2rem] overflow-hidden shadow-2xl border border-[var(--border-subtle)] flex flex-col md:flex-row"
             >
               {/* Close Button */}
               <button
                 onClick={(e) => { e.stopPropagation(); setSelectedId(null); }}
-                className="absolute top-4 right-4 z-50 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-colors"
+                className="absolute top-4 right-4 z-50 p-2 bg-[var(--overlay-light)] hover:bg-[var(--overlay-medium)] backdrop-blur-md rounded-full text-[var(--text-primary)] transition-colors"
               >
                 <X size={24} />
               </button>
@@ -419,41 +426,41 @@ export default function YearInReview() {
                   alt={selectedMonth.title}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent md:bg-gradient-to-r" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-elevated)] via-transparent to-transparent md:bg-gradient-to-r" />
               </motion.div>
 
               {/* Right Side: Content */}
               <div className="flex-1 p-6 md:p-10 flex flex-col h-full overflow-y-auto">
                 <motion.div layoutId={`content-${selectedId}`} className="mb-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="px-3 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full text-xs font-bold uppercase tracking-wider">
+                    <span className="px-3 py-1 bg-[var(--accent-muted)] text-[var(--accent-text)] border border-[var(--accent)]/20 rounded-full text-xs font-bold uppercase tracking-wider">
                       {selectedMonth.month} {selectedMonth.year}
                     </span>
-                    <div className="flex items-center gap-1 text-neutral-400 text-xs font-medium">
+                    <div className="flex items-center gap-1 text-[var(--text-tertiary)] text-xs font-medium">
                       <MapPin size={12} /> {selectedMonth.location}
                     </div>
                   </div>
 
-                  <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">{selectedMonth.title}</h2>
+                  <h2 className="text-4xl md:text-5xl font-bold mb-6 text-[var(--text-primary)]">{selectedMonth.title}</h2>
 
-                  <p className="text-neutral-300 leading-relaxed text-lg mb-8">
+                  <p className="text-[var(--text-secondary)] leading-relaxed text-lg mb-8">
                     {selectedMonth.description}
                   </p>
 
                   <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                      <div className="flex items-center gap-2 text-neutral-400 mb-1">
+                    <div className="p-4 rounded-2xl bg-[var(--overlay-light)] border border-[var(--border-muted)]">
+                      <div className="flex items-center gap-2 text-[var(--text-tertiary)] mb-1">
                         <ImageIcon size={16} />
                         <span className="text-xs uppercase tracking-wider">Captured</span>
                       </div>
-                      <span className="text-2xl font-bold text-white">{selectedMonth.stats.photos} Photos</span>
+                      <span className="text-2xl font-bold text-[var(--text-primary)]">{selectedMonth.stats.photos} Photos</span>
                     </div>
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                      <div className="flex items-center gap-2 text-neutral-400 mb-1">
+                    <div className="p-4 rounded-2xl bg-[var(--overlay-light)] border border-[var(--border-muted)]">
+                      <div className="flex items-center gap-2 text-[var(--text-tertiary)] mb-1">
                         <Calendar size={16} />
                         <span className="text-xs uppercase tracking-wider">Month</span>
                       </div>
-                      <span className="text-2xl font-bold text-white">{selectedMonth.month}</span>
+                      <span className="text-2xl font-bold text-[var(--text-primary)]">{selectedMonth.month}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -465,7 +472,7 @@ export default function YearInReview() {
                   transition={{ delay: 0.2 }}
                   className="mt-auto"
                 >
-                  <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-500 mb-3">Highlights</h4>
+                  <h4 className="text-sm font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Highlights</h4>
                   <GalleryCarousel images={selectedMonth.gallery} />
                 </motion.div>
               </div>
