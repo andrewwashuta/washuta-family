@@ -2,27 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* MNKY Banana Grotesk Font */
+/* ABC Marist Serif Font */
 @font-face {
-  font-family: "MNKY Grotesk";
-  src: url("/fonts/mnkybananagrotesk-regular.woff") format("woff");
+  font-family: "ABC Marist";
+  src: url("/fonts/ABCMarist-Book-Trial.woff2") format("woff2"),
+       url("/fonts/ABCMarist-Book-Trial.woff") format("woff");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
-@font-face {
-  font-family: "MNKY Grotesk";
-  src: url("/fonts/mnkybananagrotesk-medium.woff") format("woff");
-  font-weight: 500 700;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
-  --font-mnky: "MNKY Grotesk", system-ui, sans-serif;
+  --font-marist: "ABC Marist", Georgia, "Times New Roman", serif;
 }
 
 body {
-  font-family: var(--font-mnky);
+  font-family: var(--font-marist);
+  letter-spacing: -0.16px;
 }
