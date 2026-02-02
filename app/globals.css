@@ -12,8 +12,19 @@
   font-display: swap;
 }
 
+/* Monkey Banana Grotesk Sans */
+@font-face {
+  font-family: "Monkey Grotesk";
+  src: url("/fonts/mnkybananagrotesk-regular.woff2") format("woff2"),
+       url("/fonts/mnkybananagrotesk-regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --font-marist: "ABC Marist", Georgia, "Times New Roman", serif;
+  --font-grotesk: "Monkey Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* Light mode (default) */
   --bg-primary: theme('colors.stone.50');
@@ -27,6 +38,7 @@
   --border-subtle: theme('colors.stone.200');
 
   --overlay-backdrop: rgba(255, 255, 255, 0.9);
+  --image-bg: theme('colors.stone.100');
 }
 
 [data-theme="dark"] {
@@ -41,12 +53,17 @@
   --border-subtle: rgba(255, 255, 255, 0.1);
 
   --overlay-backdrop: rgba(0, 0, 0, 0.9);
+  --image-bg: theme('colors.neutral.900');
 }
 
 body {
   font-family: var(--font-marist);
-  letter-spacing: -0.16px;
+  letter-spacing: -0.02em;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.font-sans {
+  font-family: var(--font-grotesk);
 }
