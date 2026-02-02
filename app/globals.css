@@ -2,104 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
-/* MNKY Banana Grotesk Font */
+/* ABC Marist Serif Font */
 @font-face {
-  font-family: "MNKY Grotesk";
-  src: url("/fonts/mnkybananagrotesk-regular.woff") format("woff");
+  font-family: "ABC Marist";
+  src: url("/fonts/ABCMarist-Book-Trial.woff2") format("woff2"),
+       url("/fonts/ABCMarist-Book-Trial.woff") format("woff");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
-@font-face {
-  font-family: "MNKY Grotesk";
-  src: url("/fonts/mnkybananagrotesk-medium.woff") format("woff");
-  font-weight: 500 700;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
-  --font-mnky: "MNKY Grotesk", system-ui, sans-serif;
+  --font-marist: "ABC Marist", Georgia, "Times New Roman", serif;
 
-  /* Light mode (default) - Stone palette */
+  /* Light mode (default) */
   --bg-primary: theme('colors.stone.50');
   --bg-secondary: theme('colors.white');
-  --bg-tertiary: theme('colors.stone.100');
   --bg-elevated: theme('colors.white');
 
   --text-primary: theme('colors.stone.900');
-  --text-secondary: theme('colors.stone.600');
-  --text-tertiary: theme('colors.stone.500');
+  --text-secondary: theme('colors.stone.500');
   --text-muted: theme('colors.stone.400');
-  --text-accent: theme('colors.rose.600');
 
   --border-subtle: theme('colors.stone.200');
-  --border-muted: theme('colors.stone.100');
 
-  --accent: theme('colors.rose.500');
-  --accent-muted: theme('colors.rose.100');
-  --accent-text: theme('colors.rose.600');
-
-  --overlay-light: rgba(0, 0, 0, 0.05);
-  --overlay-medium: rgba(0, 0, 0, 0.1);
-  --overlay-heavy: rgba(0, 0, 0, 0.4);
-  --overlay-backdrop: rgba(255, 255, 255, 0.8);
-
-  --shadow-color: rgba(0, 0, 0, 0.1);
-  --shadow-accent: rgba(244, 63, 94, 0.1);
-
-  --selection-bg: theme('colors.rose.200');
-
-  /* Gradient stops for light mode */
-  --gradient-text-from: theme('colors.stone.900');
-  --gradient-text-via: theme('colors.stone.700');
-  --gradient-text-to: theme('colors.stone.400');
+  --overlay-backdrop: rgba(255, 255, 255, 0.9);
 }
 
 [data-theme="dark"] {
-  /* Dark mode - Neutral palette */
   --bg-primary: theme('colors.neutral.950');
   --bg-secondary: theme('colors.neutral.900');
-  --bg-tertiary: theme('colors.neutral.800');
-  --bg-elevated: theme('colors.neutral.900');
+  --bg-elevated: theme('colors.neutral.950');
 
   --text-primary: theme('colors.neutral.100');
-  --text-secondary: theme('colors.neutral.300');
-  --text-tertiary: theme('colors.neutral.400');
+  --text-secondary: theme('colors.neutral.400');
   --text-muted: theme('colors.neutral.500');
-  --text-accent: theme('colors.rose.400');
 
   --border-subtle: rgba(255, 255, 255, 0.1);
-  --border-muted: rgba(255, 255, 255, 0.05);
 
-  --accent: theme('colors.rose.500');
-  --accent-muted: rgba(244, 63, 94, 0.1);
-  --accent-text: theme('colors.rose.400');
-
-  --overlay-light: rgba(255, 255, 255, 0.05);
-  --overlay-medium: rgba(255, 255, 255, 0.1);
-  --overlay-heavy: rgba(0, 0, 0, 0.4);
-  --overlay-backdrop: rgba(0, 0, 0, 0.8);
-
-  --shadow-color: rgba(0, 0, 0, 0.3);
-  --shadow-accent: rgba(244, 63, 94, 0.1);
-
-  --selection-bg: rgba(244, 63, 94, 0.3);
-
-  /* Gradient stops for dark mode */
-  --gradient-text-from: theme('colors.white');
-  --gradient-text-via: theme('colors.neutral.200');
-  --gradient-text-to: theme('colors.neutral.600');
+  --overlay-backdrop: rgba(0, 0, 0, 0.9);
 }
 
 body {
-  font-family: var(--font-mnky);
+  font-family: var(--font-marist);
+  letter-spacing: -0.16px;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-::selection {
-  background-color: var(--selection-bg);
 }
