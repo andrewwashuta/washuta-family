@@ -14,9 +14,39 @@
 
 :root {
   --font-marist: "ABC Marist", Georgia, "Times New Roman", serif;
+
+  /* Light mode (default) */
+  --bg-primary: theme('colors.stone.50');
+  --bg-secondary: theme('colors.white');
+  --bg-elevated: theme('colors.white');
+
+  --text-primary: theme('colors.stone.900');
+  --text-secondary: theme('colors.stone.500');
+  --text-muted: theme('colors.stone.400');
+
+  --border-subtle: theme('colors.stone.200');
+
+  --overlay-backdrop: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="dark"] {
+  --bg-primary: theme('colors.neutral.950');
+  --bg-secondary: theme('colors.neutral.900');
+  --bg-elevated: theme('colors.neutral.950');
+
+  --text-primary: theme('colors.neutral.100');
+  --text-secondary: theme('colors.neutral.400');
+  --text-muted: theme('colors.neutral.500');
+
+  --border-subtle: rgba(255, 255, 255, 0.1);
+
+  --overlay-backdrop: rgba(0, 0, 0, 0.9);
 }
 
 body {
   font-family: var(--font-marist);
   letter-spacing: -0.16px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }

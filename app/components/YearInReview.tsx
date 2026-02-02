@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 // --- Family Photo Data ---
 const YEAR_DATA = [
@@ -249,8 +250,8 @@ const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: stri
 
       {/* Caption + index */}
       <div className="mt-3 flex items-baseline justify-between">
-        <span className="text-xs text-white/40">{images[index].caption}</span>
-        <span className="text-xs text-white/30">{index + 1}/{images.length}</span>
+        <span className="text-xs text-[var(--text-muted)]">{images[index].caption}</span>
+        <span className="text-xs text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
       </div>
     </div>
   );
@@ -272,7 +273,12 @@ export default function YearInReview() {
   }, [selectedId]);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors duration-300">
+
+      {/* Theme Toggle */}
+      <div className="fixed top-6 right-6 z-40">
+        <ThemeToggle />
+      </div>
 
       {/* --- Header --- */}
       <div className="relative pt-16 pb-10 px-6 md:px-12 max-w-6xl mx-auto">
@@ -282,12 +288,12 @@ export default function YearInReview() {
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
           <div className="flex items-baseline justify-between mb-8">
-            <h1 className="text-2xl md:text-3xl text-white/90">
+            <h1 className="text-2xl md:text-3xl text-[var(--text-primary)]">
               Washuta Family
             </h1>
-            <span className="text-sm text-white/40">2024</span>
+            <span className="text-sm text-[var(--text-muted)]">2024</span>
           </div>
-          <p className="text-base md:text-lg text-white/50 max-w-lg leading-relaxed">
+          <p className="text-base md:text-lg text-[var(--text-secondary)] max-w-lg leading-relaxed">
             A visual collection of our year — from snowy mornings to summer adventures, the moments we'll remember.
           </p>
         </motion.div>
@@ -323,10 +329,10 @@ export default function YearInReview() {
                 className="pt-3 pb-6"
               >
                 <div className="flex items-baseline justify-between">
-                  <span className="text-sm text-white/90">{month.title}</span>
-                  <span className="text-xs text-white/40">{month.month}</span>
+                  <span className="text-sm text-[var(--text-primary)]">{month.title}</span>
+                  <span className="text-xs text-[var(--text-muted)]">{month.month}</span>
                 </div>
-                <div className="text-xs text-white/40 mt-1">
+                <div className="text-xs text-[var(--text-muted)] mt-1">
                   {month.location}
                 </div>
               </motion.div>
@@ -346,18 +352,18 @@ export default function YearInReview() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedId(null)}
-              className="absolute inset-0 bg-black/90 backdrop-blur-sm"
+              className="absolute inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm"
             />
 
             {/* Modal */}
             <motion.div
               layoutId={`card-${selectedId}`}
-              className="relative w-full max-w-4xl max-h-[90vh] bg-neutral-950 overflow-hidden flex flex-col md:flex-row"
+              className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--bg-elevated)] overflow-hidden flex flex-col md:flex-row"
             >
               {/* Close */}
               <button
                 onClick={(e) => { e.stopPropagation(); setSelectedId(null); }}
-                className="absolute top-4 right-4 z-50 p-2 text-white/40 hover:text-white/80 transition-colors"
+                className="absolute top-4 right-4 z-50 p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               >
                 <X size={20} />
               </button>
@@ -379,15 +385,15 @@ export default function YearInReview() {
               <div className="flex-1 p-6 md:p-8 flex flex-col overflow-y-auto">
                 <motion.div layoutId={`content-${selectedId}`} className="mb-6">
                   <div className="flex items-baseline justify-between mb-6">
-                    <span className="text-sm text-white/90">{selectedMonth.title}</span>
-                    <span className="text-xs text-white/40">{selectedMonth.month} {selectedMonth.year}</span>
+                    <span className="text-sm text-[var(--text-primary)]">{selectedMonth.title}</span>
+                    <span className="text-xs text-[var(--text-muted)]">{selectedMonth.month} {selectedMonth.year}</span>
                   </div>
 
-                  <p className="text-sm text-white/50 leading-relaxed mb-6">
+                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
                     {selectedMonth.description}
                   </p>
 
-                  <div className="text-xs text-white/40">
+                  <div className="text-xs text-[var(--text-muted)]">
                     {selectedMonth.location} · {selectedMonth.stats.photos} photos
                   </div>
                 </motion.div>
