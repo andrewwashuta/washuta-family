@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
-// --- Family Photo Data ---
 const YEAR_DATA = [
   {
     id: 'january',
     month: 'January',
-    year: '2024',
+    year: '2025',
     title: 'Fresh starts',
     location: 'Home',
     description: 'Cozy mornings, hot cocoa after sled rides, and a new tradition of Sunday waffles.',
@@ -26,7 +25,7 @@ const YEAR_DATA = [
   {
     id: 'february',
     month: 'February',
-    year: '2024',
+    year: '2025',
     title: 'Warm hearts',
     location: 'Home',
     description: 'Handmade valentines, a surprise snow day, and a living room dance party.',
@@ -42,7 +41,7 @@ const YEAR_DATA = [
   {
     id: 'march',
     month: 'March',
-    year: '2024',
+    year: '2025',
     title: 'First blooms',
     location: 'Local trails',
     description: 'Early hikes, garden prep, and the first picnic of the season by the lake.',
@@ -58,7 +57,7 @@ const YEAR_DATA = [
   {
     id: 'april',
     month: 'April',
-    year: '2024',
+    year: '2025',
     title: 'Play outside',
     location: 'Soccer fields',
     description: 'Weekend soccer games, splashy rain walks, and pastel egg adventures.',
@@ -74,7 +73,7 @@ const YEAR_DATA = [
   {
     id: 'may',
     month: 'May',
-    year: '2024',
+    year: '2025',
     title: 'Golden evenings',
     location: 'School & backyard',
     description: 'School performances, bike rides at sunset, and the first backyard campout.',
@@ -90,7 +89,7 @@ const YEAR_DATA = [
   {
     id: 'june',
     month: 'June',
-    year: '2024',
+    year: '2025',
     title: 'Summer energy',
     location: 'Pool & road trips',
     description: 'Pool afternoons, messy popsicles, and day trips that stretched late.',
@@ -106,7 +105,7 @@ const YEAR_DATA = [
   {
     id: 'july',
     month: 'July',
-    year: '2024',
+    year: '2025',
     title: 'Big sky days',
     location: 'Lake house',
     description: 'Fourth of July sparklers, lake weekends, and sunset paddleboarding.',
@@ -122,7 +121,7 @@ const YEAR_DATA = [
   {
     id: 'august',
     month: 'August',
-    year: '2024',
+    year: '2025',
     title: 'Road miles',
     location: 'Mountain trip',
     description: 'Mountain air, roadside diners, and the loudest family sing-alongs.',
@@ -138,7 +137,7 @@ const YEAR_DATA = [
   {
     id: 'september',
     month: 'September',
-    year: '2024',
+    year: '2025',
     title: 'New routines',
     location: 'School & neighborhood',
     description: 'Back-to-school energy, fresh notebooks, and after-dinner walks.',
@@ -154,7 +153,7 @@ const YEAR_DATA = [
   {
     id: 'october',
     month: 'October',
-    year: '2024',
+    year: '2025',
     title: 'Autumn glow',
     location: 'Pumpkin patch',
     description: 'Pumpkin carving, crunchy leaves, and the spookiest movie marathons.',
@@ -170,7 +169,7 @@ const YEAR_DATA = [
   {
     id: 'november',
     month: 'November',
-    year: '2024',
+    year: '2025',
     title: 'Gather + savor',
     location: 'Home',
     description: 'Turkey trials, gratitude notes, and long chats around the table.',
@@ -186,7 +185,7 @@ const YEAR_DATA = [
   {
     id: 'december',
     month: 'December',
-    year: '2024',
+    year: '2025',
     title: 'Lights on',
     location: 'Home',
     description: 'Tree trimming, cookie exchanges, and the coziest holiday nights.',
@@ -201,209 +200,214 @@ const YEAR_DATA = [
   },
 ];
 
-// --- Sub-Component: Carousel ---
 const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: string}> }) => {
   const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
 
-  const next = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const next = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setDirection(1);
     setIndex((prev) => (prev + 1) % images.length);
   };
 
-  const prev = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const prev = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setDirection(-1);
     setIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
+  const handleDragEnd = (e: MouseEvent | TouchEvent | PointerEvent, info: { offset: { x: number } }) => {
+    const threshold = 50;
+    if (info.offset.x < -threshold) {
+      next();
+    } else if (info.offset.x > threshold) {
+      prev();
+    }
+  };
+
+  const variants = {
+    enter: (dir: number) => ({ x: dir > 0 ? 100 : -100, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: number) => ({ x: dir > 0 ? -100 : 100, opacity: 0 }),
+  };
+
   return (
-    <div className="relative w-full aspect-[4/3] overflow-hidden group">
-      <AnimatePresence mode='wait'>
+    <div className="relative w-full aspect-[4/5] overflow-hidden group bg-[var(--image-bg)]">
+      <AnimatePresence mode='wait' custom={direction}>
         <motion.img
           key={index}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          custom={direction}
+          variants={variants}
+          initial="enter"
+          animate="center"
+          exit="exit"
           transition={{ duration: 0.2 }}
           src={images[index].src}
           alt={images[index].caption}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.2}
+          onDragEnd={handleDragEnd}
         />
       </AnimatePresence>
 
-      {/* Navigation */}
       {images.length > 1 && (
-        <div className="absolute inset-0 flex items-center justify-between px-3 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute inset-0 flex items-center justify-between px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
           <button
             onClick={prev}
-            className="p-1.5 text-white/60 hover:text-white transition-colors"
+            aria-label="Previous image"
+            className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
           >
             <ChevronLeft size={18} />
           </button>
           <button
             onClick={next}
-            className="p-1.5 text-white/60 hover:text-white transition-colors"
+            aria-label="Next image"
+            className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
           >
             <ChevronRight size={18} />
           </button>
         </div>
       )}
 
-      {/* Caption + index */}
-      <div className="mt-3 flex items-baseline justify-between">
-        <span className="text-xs text-[var(--text-muted)]">{images[index].caption}</span>
-        <span className="text-xs text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
+      <div className="mt-3 flex items-baseline justify-between font-sans" aria-live="polite">
+        <span className="text-[13px] text-[var(--text-muted)]">{images[index].caption}</span>
+        <span className="text-[13px] text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
       </div>
     </div>
   );
 };
 
-// --- Main Application ---
 export default function YearInReview() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Lock body scroll when modal is open
+  const closeModal = useCallback(() => setSelectedId(null), []);
+
   useEffect(() => {
     if (selectedId) {
       document.body.style.overflow = 'hidden';
+      closeButtonRef.current?.focus();
+      const handleEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); };
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; };
-  }, [selectedId]);
+  }, [selectedId, closeModal]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors duration-300">
 
-      {/* Theme Toggle */}
       <div className="fixed top-6 right-6 z-40">
         <ThemeToggle />
       </div>
 
-      {/* --- Header --- */}
-      <div className="relative pt-16 pb-10 px-6 md:px-12 max-w-6xl mx-auto">
+      <header className="relative pt-16 pb-10 px-6 md:px-12 max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <div className="flex items-baseline justify-between mb-8">
-            <h1 className="text-2xl md:text-3xl text-[var(--text-primary)]">
+          <div className="flex items-baseline justify-between mb-2">
+            <h1 className="text-[18px] tracking-[-0.03em] text-[var(--text-primary)]">
               Washuta Family
             </h1>
-            <span className="text-sm text-[var(--text-muted)]">2024</span>
+            <span className="text-[13px] text-[var(--text-muted)] font-sans">2025</span>
           </div>
-          <p className="text-base md:text-lg text-[var(--text-secondary)] max-w-lg leading-relaxed">
+          <p className="text-[13px] text-[var(--text-muted)] font-sans mb-6">Year in Review</p>
+          <p className="text-[14px] text-[var(--text-secondary)] max-w-lg leading-relaxed">
             A visual collection of our year — from snowy mornings to summer adventures, the moments we'll remember.
           </p>
         </motion.div>
-      </div>
+      </header>
 
-      {/* --- Grid --- */}
-      <div className="px-6 md:px-12 pb-20 max-w-6xl mx-auto">
+      <main className="px-6 md:px-12 pb-20 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {YEAR_DATA.map((month, i) => (
             <motion.div
               key={month.id}
               layoutId={`card-${month.id}`}
               onClick={() => setSelectedId(month.id)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
+              role="button"
+              tabIndex={0}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              className="relative group cursor-pointer"
+              className="relative group cursor-pointer p-2 rounded-lg border border-[var(--border-subtle)] hover:border-[var(--text-muted)] transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
             >
-              {/* Image */}
-              <motion.div layoutId={`img-container-${month.id}`} className="aspect-[3/4] overflow-hidden">
-                <motion.img
-                  layoutId={`img-${month.id}`}
+              <div className="aspect-[4/5] overflow-hidden rounded">
+                <img
                   src={month.cover}
                   alt={month.title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                 />
-              </motion.div>
+              </div>
 
-              {/* Caption below image */}
               <motion.div
                 layoutId={`content-${month.id}`}
-                className="pt-3 pb-6"
+                className="pt-3 px-1"
               >
                 <div className="flex items-baseline justify-between">
-                  <span className="text-sm text-[var(--text-primary)]">{month.title}</span>
-                  <span className="text-xs text-[var(--text-muted)]">{month.month}</span>
-                </div>
-                <div className="text-xs text-[var(--text-muted)] mt-1">
-                  {month.location}
+                  <span className="text-[14px] text-[var(--text-primary)]">{month.title}</span>
+                  <span className="text-[13px] text-[var(--text-muted)] font-sans">{month.month}</span>
                 </div>
               </motion.div>
             </motion.div>
           ))}
         </div>
-      </div>
+      </main>
 
-      {/* --- Modal --- */}
       <AnimatePresence>
         {selectedId && selectedMonth && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
 
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedId(null)}
+              onClick={closeModal}
               className="absolute inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm"
             />
 
-            {/* Modal */}
             <motion.div
               layoutId={`card-${selectedId}`}
-              className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--bg-elevated)] overflow-hidden flex flex-col md:flex-row"
+              role="dialog"
+              aria-modal="true"
+              aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
+              className="relative w-full max-w-3xl max-h-[90vh] bg-[var(--bg-elevated)] overflow-hidden"
             >
-              {/* Close */}
               <button
-                onClick={(e) => { e.stopPropagation(); setSelectedId(null); }}
+                ref={closeButtonRef}
+                onClick={(e) => { e.stopPropagation(); closeModal(); }}
+                aria-label="Close"
                 className="absolute top-4 right-4 z-50 p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
 
-              {/* Image */}
-              <motion.div
-                layoutId={`img-container-${selectedId}`}
-                className="relative h-72 md:h-auto md:w-1/2 flex-shrink-0"
-              >
-                 <motion.img
-                  layoutId={`img-${selectedId}`}
-                  src={selectedMonth.cover}
-                  alt={selectedMonth.title}
-                  className="w-full h-full object-cover"
-                />
-              </motion.div>
-
-              {/* Content */}
-              <div className="flex-1 p-6 md:p-8 flex flex-col overflow-y-auto">
-                <motion.div layoutId={`content-${selectedId}`} className="mb-6">
-                  <div className="flex items-baseline justify-between mb-6">
-                    <span className="text-sm text-[var(--text-primary)]">{selectedMonth.title}</span>
-                    <span className="text-xs text-[var(--text-muted)]">{selectedMonth.month} {selectedMonth.year}</span>
+              <div className="p-6 md:p-8 flex flex-col overflow-y-auto max-h-[90vh]">
+                <motion.div layoutId={`content-${selectedId}`} className="mb-4">
+                  <div className="flex items-baseline justify-between mb-4">
+                    <span className="text-[14px] text-[var(--text-primary)]">{selectedMonth.title}</span>
+                    <span className="text-[13px] text-[var(--text-muted)] font-sans">{selectedMonth.month} {selectedMonth.year}</span>
                   </div>
 
-                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
+                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
                     {selectedMonth.description}
                   </p>
-
-                  <div className="text-xs text-[var(--text-muted)]">
-                    {selectedMonth.location} · {selectedMonth.stats.photos} photos
-                  </div>
                 </motion.div>
 
-                {/* Carousel */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.15 }}
-                  className="mt-auto pt-6"
+                  className="pt-4"
                 >
                   <GalleryCarousel images={selectedMonth.gallery} />
                 </motion.div>

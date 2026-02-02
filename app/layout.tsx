@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from './components/ThemeProvider'
+import { Agentation } from 'agentation'
 
 export const metadata: Metadata = {
   title: 'Washuta Family Year in Review',
@@ -18,6 +19,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
         </ThemeProvider>
+        {process.env.NODE_ENV === 'development' && <Agentation />}
       </body>
     </html>
   )
