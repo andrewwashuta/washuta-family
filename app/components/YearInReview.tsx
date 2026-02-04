@@ -342,18 +342,17 @@ export default function YearInReview() {
           Month by month
         </motion.span>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {YEAR_DATA.map((month, i) => (
+          {YEAR_DATA.map((month) => (
             <motion.div
               key={month.id}
-              layoutId={`card-${month.id}`}
               onClick={() => setSelectedId(month.id)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
               role="button"
               tabIndex={0}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.05 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
               style={{ boxShadow: 'var(--shadow-card)' }}
               whileHover={{
                 y: -2,
@@ -383,60 +382,59 @@ export default function YearInReview() {
 
       <AnimatePresence>
         {selectedId && selectedMonth && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
 
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
               onClick={closeModal}
               className="absolute inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-md"
             />
 
             <motion.div
-              layoutId={`card-${selectedId}`}
-              layout="position"
-              transition={{
-                layout: { type: 'spring', stiffness: 300, damping: 30 },
-              }}
+              initial={{ opacity: 0, scale: 0.97, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 10 }}
+              transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
               role="dialog"
               aria-modal="true"
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
               style={{ boxShadow: 'var(--shadow-modal)' }}
-              className="relative w-full max-w-3xl max-h-[90vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden"
+              className="relative w-full max-w-3xl max-h-[92vh] md:max-h-[90vh] bg-[var(--bg-elevated)] rounded-t-2xl md:rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
-              <button
-                ref={closeButtonRef}
-                onClick={(e) => { e.stopPropagation(); closeModal(); }}
-                aria-label="Close"
-                className="absolute top-4 right-4 z-50 p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-              >
-                <X size={18} />
-              </button>
+              {/* Fixed header */}
+              <div className="flex items-center justify-between px-6 md:px-8 pt-5 pb-3 border-b border-[var(--border-subtle)]">
+                <div className="flex items-baseline gap-3 min-w-0">
+                  <span className="text-[14px] text-[var(--text-primary)] truncate">{selectedMonth.title}</span>
+                  <span className="text-[13px] text-[var(--text-muted)] font-sans whitespace-nowrap">{selectedMonth.month} {selectedMonth.year}</span>
+                </div>
+                <button
+                  ref={closeButtonRef}
+                  onClick={(e) => { e.stopPropagation(); closeModal(); }}
+                  aria-label="Close"
+                  className="ml-4 flex-shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
 
-              <div className="p-6 md:p-8 flex flex-col overflow-y-auto max-h-[90vh]">
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto px-6 md:px-8 py-5">
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.25, ease: 'easeOut' }}
+                  className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-5"
+                >
+                  {selectedMonth.description}
+                </motion.p>
+
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.15, duration: 0.3, ease: 'easeOut' }}
-                  className="mb-4"
-                >
-                  <div className="flex items-baseline justify-between mb-4">
-                    <span className="text-[14px] text-[var(--text-primary)]">{selectedMonth.title}</span>
-                    <span className="text-[13px] text-[var(--text-muted)] font-sans">{selectedMonth.month} {selectedMonth.year}</span>
-                  </div>
-
-                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
-                    {selectedMonth.description}
-                  </p>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.25, duration: 0.35, ease: 'easeOut' }}
-                  className="pt-4"
                 >
                   <GalleryCarousel images={selectedMonth.gallery} />
                 </motion.div>
