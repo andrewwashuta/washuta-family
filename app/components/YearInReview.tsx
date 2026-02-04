@@ -353,43 +353,46 @@ export default function YearInReview() {
           Month by month
         </motion.span>
         <div className="flex flex-col">
-          {YEAR_DATA.map((month, index) => (
-            <div
-              key={month.id}
-              ref={(el) => { cardRefs.current[index] = el; }}
-              style={{
-                position: 'sticky',
-                top: `${index * PEEK_HEIGHT}px`,
-                zIndex: index + 1,
-              }}
-              className="mb-2"
-            >
+          {YEAR_DATA.map((month, index) => {
+            const isLast = index === YEAR_DATA.length - 1;
+            return (
               <div
-                className="bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-subtle)] overflow-hidden"
-                style={{ boxShadow: 'var(--shadow-card-stack)' }}
+                key={month.id}
+                ref={(el) => { cardRefs.current[index] = el; }}
+                style={{
+                  ...(!isLast ? {
+                    position: 'sticky' as const,
+                    top: `${index * PEEK_HEIGHT}px`,
+                  } : {}),
+                  zIndex: index + 1,
+                }}
+                className={isLast ? '' : 'mb-2'}
               >
-                {/* Peek header — visible when stacked, click to scroll back */}
                 <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    scrollToCard(index);
-                  }}
-                  className="h-[44px] flex items-center justify-between px-4 cursor-pointer select-none border-b border-[var(--border-subtle)]"
+                  className="bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-subtle)] overflow-hidden"
+                  style={{ boxShadow: 'var(--shadow-card-stack)' }}
                 >
-                  <span className="text-[14px] text-[var(--text-primary)] truncate">{month.title}</span>
-                  <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0 ml-3">{month.month}</span>
-                </div>
+                  {/* Peek header — visible when stacked, click to scroll back */}
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      scrollToCard(index);
+                    }}
+                    className="h-[44px] flex items-center justify-between px-4 cursor-pointer select-none border-b border-[var(--border-subtle)]"
+                  >
+                    <span className="text-[14px] text-[var(--text-primary)] truncate">{month.title}</span>
+                    <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0 ml-3">{month.month}</span>
+                  </div>
 
-                {/* Card content — click to open gallery modal */}
-                <div
-                  onClick={() => setSelectedId(month.id)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
-                  role="button"
-                  tabIndex={0}
-                  className="cursor-pointer group"
-                >
-                  <div className="px-3 pt-3">
-                    <div className="aspect-[3/2] overflow-hidden rounded-lg">
+                  {/* Card content — click to open gallery modal */}
+                  <div
+                    onClick={() => setSelectedId(month.id)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
+                    role="button"
+                    tabIndex={0}
+                    className="cursor-pointer group p-3"
+                  >
+                    <div className="aspect-[4/5] overflow-hidden rounded-lg">
                       <img
                         src={month.cover}
                         alt={month.title}
@@ -397,15 +400,10 @@ export default function YearInReview() {
                       />
                     </div>
                   </div>
-                  <div className="px-4 pt-3 pb-4">
-                    <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
-                      {month.description}
-                    </p>
-                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </main>
 
