@@ -210,7 +210,13 @@ function getHoverTransform(index: number, hoveredIndex: number | null) {
   return { y: 0, scale: 1, zIndex: index };
 }
 
-const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: string}> }) => {
+const GalleryCarousel = ({
+  images,
+  variant = 'modal',
+}: {
+  images: Array<{src: string; caption: string}>;
+  variant?: 'modal' | 'default';
+}) => {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -241,9 +247,14 @@ const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: stri
     exit: (dir: number) => ({ x: dir > 0 ? -100 : 100, opacity: 0 }),
   };
 
+  const frameClassName =
+    variant === 'modal'
+      ? 'relative w-full h-[46vh] min-h-[320px] max-h-[520px] overflow-hidden group bg-[var(--image-bg)] rounded-xl'
+      : 'relative w-full aspect-[4/5] overflow-hidden group bg-[var(--image-bg)]';
+
   return (
     <div className="w-full">
-      <div className="relative w-full aspect-[4/5] overflow-hidden group bg-[var(--image-bg)]">
+      <div className={frameClassName}>
         <AnimatePresence mode="wait" custom={direction}>
           <motion.img
             key={index}
@@ -295,6 +306,7 @@ export default function YearInReview() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -305,6 +317,7 @@ export default function YearInReview() {
     lastTime: 0,
     velocity: 0,
     moved: false,
+    suppressClickUntil: 0,
     rafId: 0 as number | 0,
   });
 
@@ -370,10 +383,26 @@ export default function YearInReview() {
     if (Math.abs(dragState.current.velocity) > 0.5) {
       startMomentum();
     }
+    if (dragState.current.moved) {
+      dragState.current.suppressClickUntil = performance.now() + 250;
+    }
     dragState.current.moved = false;
   }, [startMomentum]);
 
   useEffect(() => () => stopMomentum(), [stopMomentum]);
+
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    const maxScroll = Math.max(1, scrollWidth - clientWidth);
+    setScrollProgress(Math.min(1, Math.max(0, scrollLeft / maxScroll)));
+  }, []);
+
+  useEffect(() => {
+    handleScroll();
+    window.addEventListener('resize', handleScroll);
+    return () => window.removeEventListener('resize', handleScroll);
+  }, [handleScroll]);
 
   useEffect(() => {
     if (selectedId) {
@@ -437,12 +466,13 @@ export default function YearInReview() {
         <div className="overflow-visible">
           <div
             ref={scrollRef}
+            onScroll={handleScroll}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className={`flex overflow-x-auto overflow-y-visible scroll-smooth hide-scrollbar gap-4 pr-[50vw] md:gap-3 py-4 md:py-5 content-gutter-left ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+            className={`flex overflow-x-auto overflow-y-visible scroll-smooth hide-scrollbar gap-4 md:gap-3 py-4 md:py-5 content-gutter-left content-gutter-right ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
             style={{ touchAction: 'pan-x' }}
             role="region"
             aria-label="Monthly photo cards"
@@ -458,7 +488,10 @@ export default function YearInReview() {
                   style={{ zIndex: transform.zIndex }}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
-                  onClick={() => setSelectedId(month.id)}
+                  onClick={() => {
+                    if (performance.now() < dragState.current.suppressClickUntil) return;
+                    setSelectedId(month.id);
+                  }}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
                   role="button"
                   tabIndex={0}
@@ -488,6 +521,19 @@ export default function YearInReview() {
                 </motion.div>
               );
             })}
+          </div>
+        </div>
+        <div className="mx-auto max-w-3xl px-6 md:px-12">
+          <div className="mt-3 flex items-center justify-between text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
+            <span>Scroll to explore</span>
+            <span className="opacity-60">{Math.round(scrollProgress * 100)}%</span>
+          </div>
+          <div className="mt-2 h-[2px] w-full bg-[var(--border-subtle)] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[var(--text-muted)] transition-[width] duration-150"
+              style={{ width: `${Math.max(8, scrollProgress * 100)}%` }}
+              aria-hidden="true"
+            />
           </div>
         </div>
       </main>
@@ -548,7 +594,7 @@ export default function YearInReview() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.15, duration: 0.3, ease: 'easeOut' }}
                 >
-                  <GalleryCarousel images={selectedMonth.gallery} />
+                  <GalleryCarousel images={selectedMonth.gallery} variant="modal" />
                 </motion.div>
               </div>
 
