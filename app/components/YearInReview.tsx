@@ -303,6 +303,7 @@ const GalleryCarousel = ({
 };
 
 export default function YearInReview() {
+  const TICK_COUNT = 40;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -342,7 +343,7 @@ export default function YearInReview() {
   const getTickHeight = useCallback((index: number) => {
     const baseHeight = index % 5 === 0 ? 12 : 6;
     if (minimapWidth === 0) return baseHeight;
-    const tickX = (index / 29) * minimapWidth;
+    const tickX = (index / (TICK_COUNT - 1)) * minimapWidth;
     const indicatorX = scrollProgress * minimapWidth;
     const pointerDistance = minimapMouseX === null ? Infinity : Math.abs(minimapMouseX - tickX);
     const indicatorDistance = Math.abs(indicatorX - tickX);
@@ -351,7 +352,7 @@ export default function YearInReview() {
       Math.max(1 - pointerDistance / 120, 1 - indicatorDistance / 160)
     );
     return baseHeight + influence * (index % 5 === 0 ? 10 : 8);
-  }, [minimapMouseX, minimapWidth, scrollProgress]);
+  }, [minimapMouseX, minimapWidth, scrollProgress, TICK_COUNT]);
 
   useEffect(() => {
     if (selectedId) {
@@ -493,7 +494,7 @@ export default function YearInReview() {
           >
             <div className="absolute inset-x-0 bottom-1 h-[2px] bg-[var(--border-subtle)] rounded-full" />
             <div className="absolute inset-x-0 bottom-1 flex items-end justify-between pointer-events-none">
-              {Array.from({ length: 30 }).map((_, index) => (
+              {Array.from({ length: TICK_COUNT }).map((_, index) => (
                 <div
                   key={`tick-${index}`}
                   className="w-[1px] bg-[var(--text-muted)] transition-[height] duration-150 ease-out opacity-70"
