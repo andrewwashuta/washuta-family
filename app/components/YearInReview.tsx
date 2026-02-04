@@ -200,7 +200,24 @@ const YEAR_DATA = [
   },
 ];
 
-const PEEK_HEIGHT = 44;
+function getFanTransform(index: number, hoveredIndex: number | null) {
+  if (hoveredIndex === null) {
+    return { x: 0, y: 0, scale: 1, zIndex: index, rotate: 0 };
+  }
+  const distance = index - hoveredIndex;
+  if (distance === 0) {
+    return { x: 0, y: -8, scale: 1.03, zIndex: 50, rotate: 0 };
+  }
+  const direction = distance > 0 ? 1 : -1;
+  const absDistance = Math.abs(distance);
+  return {
+    x: direction * 8,
+    y: 0,
+    scale: 1,
+    zIndex: 20 - absDistance,
+    rotate: 0,
+  };
+}
 
 const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: string}> }) => {
   const [index, setIndex] = useState(0);
@@ -283,19 +300,52 @@ const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: stri
 
 export default function YearInReview() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [scrollVelocity, setScrollVelocity] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const dragStart = useRef({ x: 0, scrollLeft: 0 });
+  const lastScroll = useRef({ left: 0, time: Date.now() });
 
   const closeModal = useCallback(() => setSelectedId(null), []);
 
-  const scrollToCard = useCallback((index: number) => {
-    const el = cardRefs.current[index];
-    if (el) {
-      const targetScroll = el.offsetTop - index * PEEK_HEIGHT;
-      window.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
-    }
+  const updateVelocity = useCallback((scrollLeft: number) => {
+    const now = Date.now();
+    const deltaX = scrollLeft - lastScroll.current.left;
+    const deltaTime = Math.max(1, now - lastScroll.current.time);
+    const velocity = Math.max(-1, Math.min(1, deltaX / 15));
+    setScrollVelocity(velocity);
+    lastScroll.current = { left: scrollLeft, time: now };
   }, []);
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    updateVelocity(e.currentTarget.scrollLeft);
+  }, [updateVelocity]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    setIsDragging(true);
+    dragStart.current = { x: e.clientX, scrollLeft: scrollRef.current.scrollLeft };
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging || !scrollRef.current) return;
+    const deltaX = e.clientX - dragStart.current.x;
+    const newScrollLeft = dragStart.current.scrollLeft - deltaX;
+    scrollRef.current.scrollLeft = newScrollLeft;
+    updateVelocity(newScrollLeft);
+  }, [isDragging, updateVelocity]);
+
+  const handleMouseUp = useCallback(() => setIsDragging(false), []);
+
+  useEffect(() => {
+    if (scrollVelocity !== 0) {
+      const timer = setTimeout(() => setScrollVelocity(0), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [scrollVelocity]);
 
   useEffect(() => {
     if (selectedId) {
@@ -343,65 +393,70 @@ export default function YearInReview() {
         </motion.p>
       </header>
 
-      <main className="px-4 md:px-12 pb-32 max-w-3xl mx-auto">
+      <main className="pb-20">
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="inline-block text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans mb-6"
+          className="inline-block text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans mb-4 px-6 md:px-12"
         >
           Month by month
         </motion.span>
-        <div className="flex flex-col">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          className={`flex overflow-x-auto snap-x snap-mandatory scroll-smooth hide-scrollbar gap-4 pl-[10%] pr-[10%] md:gap-0 md:pl-16 md:pr-16 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+          style={{ perspective: '1000px' }}
+          role="region"
+          aria-label="Monthly photo cards"
+        >
           {YEAR_DATA.map((month, index) => {
-            const isLast = index === YEAR_DATA.length - 1;
+            const fan = getFanTransform(index, hoveredIndex);
             return (
-              <div
+              <motion.div
                 key={month.id}
-                ref={(el) => { cardRefs.current[index] = el; }}
-                style={{
-                  ...(!isLast ? {
-                    position: 'sticky' as const,
-                    top: `${index * PEEK_HEIGHT}px`,
-                  } : {}),
-                  zIndex: index + 1,
+                className={`flex-shrink-0 snap-center w-[75vw] md:w-[200px] lg:w-[220px] ${index > 0 ? 'md:-ml-6 lg:-ml-8' : ''}`}
+                animate={{
+                  x: fan.x,
+                  y: fan.y,
+                  scale: fan.scale,
+                  rotate: fan.rotate,
+                  rotateY: scrollVelocity * 12,
                 }}
-                className={isLast ? '' : 'mb-2'}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                style={{ zIndex: fan.zIndex, transformStyle: 'preserve-3d' }}
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                onClick={() => { if (!isDragging) setSelectedId(month.id); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
+                role="button"
+                tabIndex={0}
+                aria-label={`${month.month} - ${month.title}`}
               >
                 <div
-                  className="bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-subtle)] overflow-hidden"
-                  style={{ boxShadow: 'var(--shadow-card-stack)' }}
+                  className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden group"
+                  style={{ boxShadow: 'var(--shadow-card)' }}
                 >
-                  {/* Peek header — visible when stacked, click to scroll back */}
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      scrollToCard(index);
-                    }}
-                    className="h-[44px] flex items-center justify-between px-4 cursor-pointer select-none border-b border-[var(--border-subtle)]"
-                  >
+                  <div className="h-[44px] flex items-center justify-between px-4 select-none">
                     <span className="text-[14px] text-[var(--text-primary)] truncate">{month.title}</span>
                     <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0 ml-3">{month.month}</span>
                   </div>
-
-                  {/* Card content — click to open gallery modal */}
-                  <div
-                    onClick={() => setSelectedId(month.id)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
-                    role="button"
-                    tabIndex={0}
-                    className="cursor-pointer group p-3"
-                  >
+                  <div className="px-3 pb-3">
                     <div className="aspect-[4/5] overflow-hidden rounded-lg">
                       <img
                         src={month.cover}
                         alt={month.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                        draggable={false}
                       />
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>

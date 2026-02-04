@@ -79,3 +79,11 @@ body {
 .font-sans {
   font-family: var(--font-grotesk);
 }
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
