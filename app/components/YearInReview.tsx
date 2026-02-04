@@ -249,7 +249,7 @@ const GalleryCarousel = ({
 
   const frameClassName =
     variant === 'modal'
-      ? 'relative w-full h-[46vh] min-h-[320px] max-h-[520px] overflow-hidden group bg-[var(--image-bg)] rounded-xl'
+      ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden group bg-[var(--image-bg)] rounded-xl'
       : 'relative w-full aspect-[4/5] overflow-hidden group bg-[var(--image-bg)]';
 
   return (
@@ -305,91 +305,12 @@ const GalleryCarousel = ({
 export default function YearInReview() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef({
-    startX: 0,
-    scrollLeft: 0,
-    lastX: 0,
-    lastTime: 0,
-    velocity: 0,
-    moved: false,
-    suppressClickUntil: 0,
-    rafId: 0 as number | 0,
-  });
 
   const closeModal = useCallback(() => setSelectedId(null), []);
-
-  const stopMomentum = useCallback(() => {
-    if (dragState.current.rafId) {
-      cancelAnimationFrame(dragState.current.rafId);
-      dragState.current.rafId = 0;
-    }
-  }, []);
-
-  const startMomentum = useCallback(() => {
-    stopMomentum();
-    const step = () => {
-      const state = dragState.current;
-      if (!scrollRef.current) return;
-      state.velocity *= 0.92;
-      if (Math.abs(state.velocity) < 0.1) {
-        state.velocity = 0;
-        state.rafId = 0;
-        return;
-      }
-      scrollRef.current.scrollLeft -= state.velocity;
-      state.rafId = requestAnimationFrame(step);
-    };
-    dragState.current.rafId = requestAnimationFrame(step);
-  }, [stopMomentum]);
-
-  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType !== 'mouse' || !scrollRef.current) return;
-    stopMomentum();
-    dragState.current.startX = e.clientX;
-    dragState.current.scrollLeft = scrollRef.current.scrollLeft;
-    dragState.current.lastX = e.clientX;
-    dragState.current.lastTime = performance.now();
-    dragState.current.velocity = 0;
-    dragState.current.moved = false;
-    setIsDragging(true);
-  }, [stopMomentum]);
-
-  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging || e.pointerType !== 'mouse' || !scrollRef.current) return;
-    const deltaX = e.clientX - dragState.current.startX;
-    if (Math.abs(deltaX) > 3) {
-      dragState.current.moved = true;
-    }
-    scrollRef.current.scrollLeft = dragState.current.scrollLeft - deltaX;
-
-    const now = performance.now();
-    const frameDelta = now - dragState.current.lastTime;
-    if (frameDelta > 0) {
-      const movement = e.clientX - dragState.current.lastX;
-      dragState.current.velocity = (movement / frameDelta) * 16;
-    }
-    dragState.current.lastX = e.clientX;
-    dragState.current.lastTime = now;
-  }, [isDragging]);
-
-  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType !== 'mouse' || !scrollRef.current) return;
-    setIsDragging(false);
-    if (Math.abs(dragState.current.velocity) > 0.5) {
-      startMomentum();
-    }
-    if (dragState.current.moved) {
-      dragState.current.suppressClickUntil = performance.now() + 250;
-    }
-    dragState.current.moved = false;
-  }, [startMomentum]);
-
-  useEffect(() => () => stopMomentum(), [stopMomentum]);
 
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
@@ -467,12 +388,7 @@ export default function YearInReview() {
           <div
             ref={scrollRef}
             onScroll={handleScroll}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            className={`flex overflow-x-auto overflow-y-visible scroll-smooth hide-scrollbar gap-4 md:gap-3 py-4 md:py-5 content-gutter-left content-gutter-right ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+            className="flex overflow-x-auto overflow-y-visible scroll-smooth hide-scrollbar gap-4 md:gap-3 py-4 md:py-5 content-gutter-left content-gutter-right"
             style={{ touchAction: 'pan-x' }}
             role="region"
             aria-label="Monthly photo cards"
@@ -488,10 +404,7 @@ export default function YearInReview() {
                   style={{ zIndex: transform.zIndex }}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
-                  onClick={() => {
-                    if (performance.now() < dragState.current.suppressClickUntil) return;
-                    setSelectedId(month.id);
-                  }}
+                  onClick={() => setSelectedId(month.id)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
                   role="button"
                   tabIndex={0}
@@ -528,11 +441,38 @@ export default function YearInReview() {
             <span>Scroll to explore</span>
             <span className="opacity-60">{Math.round(scrollProgress * 100)}%</span>
           </div>
-          <div className="mt-2 h-[2px] w-full bg-[var(--border-subtle)] rounded-full overflow-hidden">
+          <div
+            className="mt-3 relative h-8 flex items-end"
+            role="progressbar"
+            aria-label="Scroll position"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(scrollProgress * 100)}
+            onClick={(event) => {
+              if (!scrollRef.current) return;
+              const rect = event.currentTarget.getBoundingClientRect();
+              const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+              const maxScroll = scrollRef.current.scrollWidth - scrollRef.current.clientWidth;
+              scrollRef.current.scrollTo({ left: maxScroll * ratio, behavior: 'smooth' });
+            }}
+          >
+            <div className="absolute inset-x-0 bottom-1 h-[2px] bg-[var(--border-subtle)] rounded-full" />
+            <div className="absolute inset-x-0 bottom-1 flex items-end justify-between">
+              {Array.from({ length: 30 }).map((_, index) => (
+                <div
+                  key={`tick-${index}`}
+                  className="w-[1px] bg-[var(--text-muted)]/40"
+                  style={{ height: index % 5 === 0 ? 12 : 6 }}
+                />
+              ))}
+            </div>
             <div
-              className="h-full bg-[var(--text-muted)] transition-[width] duration-150"
-              style={{ width: `${Math.max(8, scrollProgress * 100)}%` }}
-              aria-hidden="true"
+              className="absolute bottom-1 h-[14px] w-[1px] bg-[var(--text-muted)]"
+              style={{ left: `${scrollProgress * 100}%` }}
+            />
+            <div
+              className="absolute bottom-[18px] h-2 w-2 rounded-full border border-[var(--text-muted)] bg-[var(--bg-primary)]"
+              style={{ left: `calc(${scrollProgress * 100}% - 4px)` }}
             />
           </div>
         </div>
@@ -560,7 +500,7 @@ export default function YearInReview() {
               aria-modal="true"
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
               style={{ boxShadow: 'var(--shadow-modal)' }}
-              className="relative w-full max-w-3xl max-h-[88vh] md:max-h-[90vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
+              className="relative w-full max-w-2xl md:max-w-[760px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
               {/* Fixed header */}
               <div className="flex items-center justify-between px-6 md:px-8 pt-5 pb-3 border-b border-[var(--border-subtle)]">
