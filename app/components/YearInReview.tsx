@@ -382,7 +382,7 @@ export default function YearInReview() {
 
       <AnimatePresence>
         {selectedId && selectedMonth && (
-          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-3 md:p-8">
 
             <motion.div
               initial={{ opacity: 0 }}
@@ -394,15 +394,15 @@ export default function YearInReview() {
             />
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.97, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97, y: 10 }}
-              transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
               role="dialog"
               aria-modal="true"
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
               style={{ boxShadow: 'var(--shadow-modal)' }}
-              className="relative w-full max-w-3xl max-h-[92vh] md:max-h-[90vh] bg-[var(--bg-elevated)] rounded-t-2xl md:rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
+              className="relative w-full max-w-3xl max-h-[88vh] md:max-h-[90vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
               {/* Fixed header */}
               <div className="flex items-center justify-between px-6 md:px-8 pt-5 pb-3 border-b border-[var(--border-subtle)]">
