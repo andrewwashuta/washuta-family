@@ -200,49 +200,14 @@ const YEAR_DATA = [
   },
 ];
 
-const CARD_WIDTH = 220; // approximate card width for calculations
-
-function getCardTransform(
-  index: number,
-  scrollLeft: number,
-  containerWidth: number,
-  hoveredIndex: number | null
-) {
-  // Calculate card's center position relative to viewport center
-  const cardCenterX = (index * (CARD_WIDTH - 32)) - scrollLeft + (CARD_WIDTH / 2) + 48; // account for overlap and padding
-  const viewportCenter = containerWidth / 2;
-  const offsetFromCenter = cardCenterX - viewportCenter;
-
-  // Normalize offset (-1 to 1 range, clamped)
-  const normalizedOffset = Math.max(-1, Math.min(1, offsetFromCenter / (containerWidth / 2)));
-
-  // Base rotation from position: cards rotate away from center
-  const baseRotateY = normalizedOffset * -20; // -20 to +20 degrees
-
-  // Base z-index from position (center cards on top)
-  const baseZIndex = 12 - Math.round(Math.abs(normalizedOffset) * 10);
-
-  // If hovering, modify transforms
-  if (hoveredIndex !== null) {
-    const distance = index - hoveredIndex;
-    if (distance === 0) {
-      // Hovered card: face forward, lift up, scale up
-      return { rotateY: 0, y: -12, scale: 1.06, x: 0, zIndex: 50 };
-    }
-    // Neighbors: push away, rotate more
-    const direction = distance > 0 ? 1 : -1;
-    const absDistance = Math.abs(distance);
-    return {
-      rotateY: baseRotateY + direction * 12,
-      y: 0,
-      scale: 0.97,
-      x: direction * (20 + absDistance * 8),
-      zIndex: 20 - absDistance,
-    };
+function getHoverTransform(index: number, hoveredIndex: number | null) {
+  if (hoveredIndex === null) {
+    return { y: 0, scale: 1, zIndex: index };
   }
-
-  // Normal state: just position-based rotation
-  return { rotateY: baseRotateY, y: 0, scale: 1, x: 0, zIndex: baseZIndex };
+  if (index === hoveredIndex) {
+    return { y: -6, scale: 1.02, zIndex: 50 };
+  }
+  return { y: 0, scale: 1, zIndex: index };
 }
 
 const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: string}> }) => {
@@ -277,44 +242,46 @@ const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: stri
   };
 
   return (
-    <div className="relative w-full aspect-[4/5] overflow-hidden group bg-[var(--image-bg)]">
-      <AnimatePresence mode='wait' custom={direction}>
-        <motion.img
-          key={index}
-          custom={direction}
-          variants={variants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ duration: 0.2 }}
-          src={images[index].src}
-          alt={images[index].caption}
-          className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.2}
-          onDragEnd={handleDragEnd}
-        />
-      </AnimatePresence>
+    <div className="w-full">
+      <div className="relative w-full aspect-[4/5] overflow-hidden group bg-[var(--image-bg)]">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.img
+            key={index}
+            custom={direction}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+            src={images[index].src}
+            alt={images[index].caption}
+            className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.2}
+            onDragEnd={handleDragEnd}
+          />
+        </AnimatePresence>
 
-      {images.length > 1 && (
-        <div className="absolute inset-0 flex items-center justify-between px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          <button
-            onClick={prev}
-            aria-label="Previous image"
-            className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <button
-            onClick={next}
-            aria-label="Next image"
-            className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
+        {images.length > 1 && (
+          <div className="absolute inset-0 flex items-center justify-between px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <button
+              onClick={prev}
+              aria-label="Previous image"
+              className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={next}
+              aria-label="Next image"
+              className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="mt-3 flex items-baseline justify-between font-sans" aria-live="polite">
         <span className="text-[13px] text-[var(--text-muted)]">{images[index].caption}</span>
@@ -327,47 +294,87 @@ const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: stri
 export default function YearInReview() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const [containerWidth, setContainerWidth] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const dragStart = useRef({ x: 0, scrollLeft: 0 });
+  const dragState = useRef({
+    startX: 0,
+    scrollLeft: 0,
+    lastX: 0,
+    lastTime: 0,
+    velocity: 0,
+    moved: false,
+    rafId: 0 as number | 0,
+  });
 
   const closeModal = useCallback(() => setSelectedId(null), []);
 
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    setScrollLeft(e.currentTarget.scrollLeft);
+  const stopMomentum = useCallback(() => {
+    if (dragState.current.rafId) {
+      cancelAnimationFrame(dragState.current.rafId);
+      dragState.current.rafId = 0;
+    }
   }, []);
 
-  // Track container width for position calculations
-  useEffect(() => {
-    const updateWidth = () => {
-      if (scrollRef.current) {
-        setContainerWidth(scrollRef.current.clientWidth);
+  const startMomentum = useCallback(() => {
+    stopMomentum();
+    const step = () => {
+      const state = dragState.current;
+      if (!scrollRef.current) return;
+      state.velocity *= 0.92;
+      if (Math.abs(state.velocity) < 0.1) {
+        state.velocity = 0;
+        state.rafId = 0;
+        return;
       }
+      scrollRef.current.scrollLeft -= state.velocity;
+      state.rafId = requestAnimationFrame(step);
     };
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, []);
+    dragState.current.rafId = requestAnimationFrame(step);
+  }, [stopMomentum]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!scrollRef.current) return;
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== 'mouse' || !scrollRef.current) return;
+    stopMomentum();
+    scrollRef.current.setPointerCapture(e.pointerId);
+    dragState.current.startX = e.clientX;
+    dragState.current.scrollLeft = scrollRef.current.scrollLeft;
+    dragState.current.lastX = e.clientX;
+    dragState.current.lastTime = performance.now();
+    dragState.current.velocity = 0;
+    dragState.current.moved = false;
     setIsDragging(true);
-    dragStart.current = { x: e.clientX, scrollLeft: scrollRef.current.scrollLeft };
-  }, []);
+  }, [stopMomentum]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging || !scrollRef.current) return;
-    const deltaX = e.clientX - dragStart.current.x;
-    const newScrollLeft = dragStart.current.scrollLeft - deltaX;
-    scrollRef.current.scrollLeft = newScrollLeft;
-    setScrollLeft(newScrollLeft);
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || e.pointerType !== 'mouse' || !scrollRef.current) return;
+    const deltaX = e.clientX - dragState.current.startX;
+    if (Math.abs(deltaX) > 3) {
+      dragState.current.moved = true;
+    }
+    scrollRef.current.scrollLeft = dragState.current.scrollLeft - deltaX;
+
+    const now = performance.now();
+    const frameDelta = now - dragState.current.lastTime;
+    if (frameDelta > 0) {
+      const movement = e.clientX - dragState.current.lastX;
+      dragState.current.velocity = (movement / frameDelta) * 16;
+    }
+    dragState.current.lastX = e.clientX;
+    dragState.current.lastTime = now;
   }, [isDragging]);
 
-  const handleMouseUp = useCallback(() => setIsDragging(false), []);
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== 'mouse' || !scrollRef.current) return;
+    scrollRef.current.releasePointerCapture(e.pointerId);
+    setIsDragging(false);
+    if (Math.abs(dragState.current.velocity) > 0.5) {
+      startMomentum();
+    }
+  }, [startMomentum]);
+
+  useEffect(() => () => stopMomentum(), [stopMomentum]);
 
   useEffect(() => {
     if (selectedId) {
@@ -389,101 +396,106 @@ export default function YearInReview() {
         <ThemeToggle />
       </div>
 
-      <header className="relative pt-20 pb-14 px-6 md:px-12 max-w-3xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
-        >
-          <div className="flex items-baseline justify-between mb-1">
-            <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
-              Washuta Family
-            </span>
-            <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
-              2025
-            </span>
-          </div>
-        </motion.div>
+      <header className="relative pt-20 pb-14">
+        <div className="mx-auto max-w-3xl px-6 md:px-12">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
+            <div className="flex items-baseline justify-between mb-1">
+              <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
+                Washuta Family
+              </span>
+              <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
+                2025
+              </span>
+            </div>
+          </motion.div>
 
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-          className="text-[16px] md:text-[18px] leading-[1.5] tracking-[-0.02em] text-[var(--text-secondary)] mt-6 max-w-md"
-        >
-          A collection of our favorite frames from the year — snowy mornings, summer road trips, and the quiet moments in between.
-        </motion.p>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+            className="text-[16px] md:text-[18px] leading-[1.5] tracking-[-0.02em] text-[var(--text-secondary)] mt-6 max-w-md"
+          >
+            A collection of our favorite frames from the year — snowy mornings, summer road trips, and the quiet moments in between.
+          </motion.p>
+        </div>
       </header>
 
       <main className="pb-20">
-        <motion.span
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="inline-block text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans mb-4 px-6 md:px-12"
-        >
-          Month by month
-        </motion.span>
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          className={`flex overflow-x-auto snap-x snap-mandatory scroll-smooth hide-scrollbar gap-4 pl-6 pr-[50vw] md:gap-0 md:pl-12 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
-          style={{
-            perspective: '1200px',
-            perspectiveOrigin: 'center center',
-            touchAction: 'pan-x', // lock to horizontal scroll on mobile
-          }}
-          role="region"
-          aria-label="Monthly photo cards"
-        >
-          {YEAR_DATA.map((month, index) => {
-            const transform = getCardTransform(index, scrollLeft, containerWidth, hoveredIndex);
-            return (
-              <motion.div
-                key={month.id}
-                className={`flex-shrink-0 snap-center w-[75vw] md:w-[200px] lg:w-[220px] ${index > 0 ? 'md:-ml-6 lg:-ml-8' : ''}`}
-                animate={{
-                  x: transform.x,
-                  y: transform.y,
-                  scale: transform.scale,
-                  rotateY: transform.rotateY,
-                }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                style={{ zIndex: transform.zIndex, transformStyle: 'preserve-3d' }}
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
-                onClick={() => { if (!isDragging) setSelectedId(month.id); }}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
-                role="button"
-                tabIndex={0}
-                aria-label={`${month.month} - ${month.title}`}
-              >
-                <div
-                  className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden group"
-                  style={{ boxShadow: 'var(--shadow-card)' }}
+        <div className="mx-auto max-w-3xl px-6 md:px-12">
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="inline-block text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans mb-4"
+          >
+            Month by month
+          </motion.span>
+        </div>
+        <div className="mx-auto max-w-3xl px-6 md:px-12">
+          <div
+            ref={scrollRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            className={`flex overflow-x-auto scroll-smooth hide-scrollbar gap-4 pr-[50vw] md:gap-3 py-4 md:py-5 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+            style={{ touchAction: 'pan-x' }}
+            role="region"
+            aria-label="Monthly photo cards"
+          >
+            {YEAR_DATA.map((month, index) => {
+              const transform = getHoverTransform(index, hoveredIndex);
+              return (
+                <motion.div
+                  key={month.id}
+                  className="flex-shrink-0 w-[75vw] md:w-[200px] lg:w-[220px]"
+                  animate={{ y: transform.y, scale: transform.scale }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  style={{ zIndex: transform.zIndex }}
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  onClick={() => {
+                    if (dragState.current.moved) {
+                      dragState.current.moved = false;
+                      return;
+                    }
+                    setSelectedId(month.id);
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${month.month} - ${month.title}`}
                 >
-                  <div className="h-[44px] flex items-center justify-between px-4 select-none">
-                    <span className="text-[14px] text-[var(--text-primary)] truncate">{month.title}</span>
-                    <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0 ml-3">{month.month}</span>
-                  </div>
-                  <div className="px-3 pb-3">
-                    <div className="aspect-[4/5] overflow-hidden rounded-lg">
-                      <img
-                        src={month.cover}
-                        alt={month.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                        draggable={false}
-                      />
+                  <div
+                    className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden"
+                    style={{ boxShadow: 'var(--shadow-card)' }}
+                  >
+                    <div className="h-[44px] flex items-center justify-between px-4 select-none">
+                      <span className="text-[14px] text-[var(--text-primary)] truncate">{month.title}</span>
+                      <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0 ml-3">{month.month}</span>
+                    </div>
+                    <div className="px-3 pb-3">
+                      <div className="aspect-[4/5] overflow-hidden rounded-lg">
+                        <img
+                          src={month.cover}
+                          alt={month.title}
+                          className={`w-full h-full object-cover transition-all duration-300 ${
+                            hoveredIndex === index ? '' : 'grayscale'
+                          }`}
+                          draggable={false}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            );
-          })}
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       </main>
 
