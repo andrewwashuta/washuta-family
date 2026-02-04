@@ -382,7 +382,7 @@ export default function YearInReview() {
 
       <AnimatePresence>
         {selectedId && selectedMonth && (
-          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-3 md:p-8">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-8">
 
             <motion.div
               initial={{ opacity: 0 }}
