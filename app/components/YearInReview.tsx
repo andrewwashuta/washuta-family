@@ -200,23 +200,49 @@ const YEAR_DATA = [
   },
 ];
 
-function getFanTransform(index: number, hoveredIndex: number | null) {
-  if (hoveredIndex === null) {
-    return { x: 0, y: 0, scale: 1, zIndex: index, rotate: 0 };
+const CARD_WIDTH = 220; // approximate card width for calculations
+
+function getCardTransform(
+  index: number,
+  scrollLeft: number,
+  containerWidth: number,
+  hoveredIndex: number | null
+) {
+  // Calculate card's center position relative to viewport center
+  const cardCenterX = (index * (CARD_WIDTH - 32)) - scrollLeft + (CARD_WIDTH / 2) + 48; // account for overlap and padding
+  const viewportCenter = containerWidth / 2;
+  const offsetFromCenter = cardCenterX - viewportCenter;
+
+  // Normalize offset (-1 to 1 range, clamped)
+  const normalizedOffset = Math.max(-1, Math.min(1, offsetFromCenter / (containerWidth / 2)));
+
+  // Base rotation from position: cards rotate away from center
+  const baseRotateY = normalizedOffset * -20; // -20 to +20 degrees
+
+  // Base z-index from position (center cards on top)
+  const baseZIndex = 12 - Math.round(Math.abs(normalizedOffset) * 10);
+
+  // If hovering, modify transforms
+  if (hoveredIndex !== null) {
+    const distance = index - hoveredIndex;
+    if (distance === 0) {
+      // Hovered card: face forward, lift up, scale up
+      return { rotateY: 0, y: -12, scale: 1.06, x: 0, zIndex: 50 };
+    }
+    // Neighbors: push away, rotate more
+    const direction = distance > 0 ? 1 : -1;
+    const absDistance = Math.abs(distance);
+    return {
+      rotateY: baseRotateY + direction * 12,
+      y: 0,
+      scale: 0.97,
+      x: direction * (20 + absDistance * 8),
+      zIndex: 20 - absDistance,
+    };
   }
-  const distance = index - hoveredIndex;
-  if (distance === 0) {
-    return { x: 0, y: -8, scale: 1.03, zIndex: 50, rotate: 0 };
-  }
-  const direction = distance > 0 ? 1 : -1;
-  const absDistance = Math.abs(distance);
-  return {
-    x: direction * 8,
-    y: 0,
-    scale: 1,
-    zIndex: 20 - absDistance,
-    rotate: 0,
-  };
+
+  // Normal state: just position-based rotation
+  return { rotateY: baseRotateY, y: 0, scale: 1, x: 0, zIndex: baseZIndex };
 }
 
 const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: string}> }) => {
@@ -301,28 +327,31 @@ const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: stri
 export default function YearInReview() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [scrollVelocity, setScrollVelocity] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragStart = useRef({ x: 0, scrollLeft: 0 });
-  const lastScroll = useRef({ left: 0, time: Date.now() });
 
   const closeModal = useCallback(() => setSelectedId(null), []);
 
-  const updateVelocity = useCallback((scrollLeft: number) => {
-    const now = Date.now();
-    const deltaX = scrollLeft - lastScroll.current.left;
-    const deltaTime = Math.max(1, now - lastScroll.current.time);
-    const velocity = Math.max(-1, Math.min(1, deltaX / 15));
-    setScrollVelocity(velocity);
-    lastScroll.current = { left: scrollLeft, time: now };
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollLeft(e.currentTarget.scrollLeft);
   }, []);
 
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    updateVelocity(e.currentTarget.scrollLeft);
-  }, [updateVelocity]);
+  // Track container width for position calculations
+  useEffect(() => {
+    const updateWidth = () => {
+      if (scrollRef.current) {
+        setContainerWidth(scrollRef.current.clientWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!scrollRef.current) return;
@@ -335,17 +364,10 @@ export default function YearInReview() {
     const deltaX = e.clientX - dragStart.current.x;
     const newScrollLeft = dragStart.current.scrollLeft - deltaX;
     scrollRef.current.scrollLeft = newScrollLeft;
-    updateVelocity(newScrollLeft);
-  }, [isDragging, updateVelocity]);
+    setScrollLeft(newScrollLeft);
+  }, [isDragging]);
 
   const handleMouseUp = useCallback(() => setIsDragging(false), []);
-
-  useEffect(() => {
-    if (scrollVelocity !== 0) {
-      const timer = setTimeout(() => setScrollVelocity(0), 150);
-      return () => clearTimeout(timer);
-    }
-  }, [scrollVelocity]);
 
   useEffect(() => {
     if (selectedId) {
@@ -409,26 +431,29 @@ export default function YearInReview() {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          className={`flex overflow-x-auto snap-x snap-mandatory scroll-smooth hide-scrollbar gap-4 pl-[10%] pr-[10%] md:gap-0 md:pl-16 md:pr-16 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
-          style={{ perspective: '1000px' }}
+          className={`flex overflow-x-auto snap-x snap-mandatory scroll-smooth hide-scrollbar gap-4 pl-6 pr-[50vw] md:gap-0 md:pl-12 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+          style={{
+            perspective: '1200px',
+            perspectiveOrigin: 'center center',
+            touchAction: 'pan-x', // lock to horizontal scroll on mobile
+          }}
           role="region"
           aria-label="Monthly photo cards"
         >
           {YEAR_DATA.map((month, index) => {
-            const fan = getFanTransform(index, hoveredIndex);
+            const transform = getCardTransform(index, scrollLeft, containerWidth, hoveredIndex);
             return (
               <motion.div
                 key={month.id}
                 className={`flex-shrink-0 snap-center w-[75vw] md:w-[200px] lg:w-[220px] ${index > 0 ? 'md:-ml-6 lg:-ml-8' : ''}`}
                 animate={{
-                  x: fan.x,
-                  y: fan.y,
-                  scale: fan.scale,
-                  rotate: fan.rotate,
-                  rotateY: scrollVelocity * 12,
+                  x: transform.x,
+                  y: transform.y,
+                  scale: transform.scale,
+                  rotateY: transform.rotateY,
                 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                style={{ zIndex: fan.zIndex, transformStyle: 'preserve-3d' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                style={{ zIndex: transform.zIndex, transformStyle: 'preserve-3d' }}
                 onMouseEnter={() => setHoveredIndex(index)}
                 onMouseLeave={() => setHoveredIndex(null)}
                 onClick={() => { if (!isDragging) setSelectedId(month.id); }}
