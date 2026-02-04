@@ -341,12 +341,17 @@ export default function YearInReview() {
 
   const getTickHeight = useCallback((index: number) => {
     const baseHeight = index % 5 === 0 ? 12 : 6;
-    if (minimapMouseX === null || minimapWidth === 0) return baseHeight;
+    if (minimapWidth === 0) return baseHeight;
     const tickX = (index / 29) * minimapWidth;
-    const distance = Math.abs(minimapMouseX - tickX);
-    const influence = Math.max(0, 1 - distance / 120);
+    const indicatorX = scrollProgress * minimapWidth;
+    const pointerDistance = minimapMouseX === null ? Infinity : Math.abs(minimapMouseX - tickX);
+    const indicatorDistance = Math.abs(indicatorX - tickX);
+    const influence = Math.max(
+      0,
+      Math.max(1 - pointerDistance / 120, 1 - indicatorDistance / 160)
+    );
     return baseHeight + influence * (index % 5 === 0 ? 10 : 8);
-  }, [minimapMouseX, minimapWidth]);
+  }, [minimapMouseX, minimapWidth, scrollProgress]);
 
   useEffect(() => {
     if (selectedId) {
@@ -499,10 +504,6 @@ export default function YearInReview() {
             <div
               className="absolute bottom-1 h-[14px] w-[1px] bg-[var(--text-muted)]"
               style={{ left: `${scrollProgress * 100}%` }}
-            />
-            <div
-              className="absolute bottom-[18px] h-2 w-2 rounded-full border border-[var(--text-muted)] bg-[var(--bg-primary)]"
-              style={{ left: `calc(${scrollProgress * 100}% - 4px)` }}
             />
           </div>
         </div>
