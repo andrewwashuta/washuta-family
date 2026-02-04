@@ -492,11 +492,11 @@ export default function YearInReview() {
             }}
           >
             <div className="absolute inset-x-0 bottom-1 h-[2px] bg-[var(--border-subtle)] rounded-full" />
-            <div className="absolute inset-x-0 bottom-1 flex items-end justify-between">
+            <div className="absolute inset-x-0 bottom-1 flex items-end justify-between pointer-events-none">
               {Array.from({ length: 30 }).map((_, index) => (
                 <div
                   key={`tick-${index}`}
-                  className="w-[1px] bg-[var(--text-muted)]/40 transition-[height] duration-150 ease-out"
+                  className="w-[1px] bg-[var(--text-muted)] transition-[height] duration-150 ease-out opacity-70"
                   style={{ height: getTickHeight(index) }}
                 />
               ))}
