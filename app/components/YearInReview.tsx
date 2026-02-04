@@ -303,7 +303,8 @@ const GalleryCarousel = ({
 };
 
 export default function YearInReview() {
-  const TICK_COUNT = 40;
+  const MONTH_COUNT = YEAR_DATA.length;
+  const MINOR_PER_INTERVAL = 4; // ticks between major month stops
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -340,19 +341,38 @@ export default function YearInReview() {
     return () => window.removeEventListener('resize', updateMinimapWidth);
   }, []);
 
-  const getTickHeight = useCallback((index: number) => {
-    const baseHeight = index % 5 === 0 ? 12 : 6;
+  const tickPositions = React.useMemo(() => {
+    const ticks: Array<{ pos: number; type: 'major' | 'minor' }> = [];
+    for (let m = 0; m < MONTH_COUNT; m++) {
+      ticks.push({ pos: m / Math.max(1, MONTH_COUNT - 1), type: 'major' });
+      if (m < MONTH_COUNT - 1) {
+        for (let k = 1; k <= MINOR_PER_INTERVAL; k++) {
+          const pos = (m + k / (MINOR_PER_INTERVAL + 1)) / Math.max(1, MONTH_COUNT - 1);
+          ticks.push({ pos, type: 'minor' });
+        }
+      }
+    }
+    return ticks;
+  }, [MONTH_COUNT]);
+
+  const getTickHeight = useCallback((pos: number, type: 'major' | 'minor') => {
+    const baseHeight = type === 'major' ? 16 : 8;
     if (minimapWidth === 0) return baseHeight;
-    const tickX = (index / (TICK_COUNT - 1)) * minimapWidth;
+    const tickX = pos * minimapWidth;
     const indicatorX = scrollProgress * minimapWidth;
     const pointerDistance = minimapMouseX === null ? Infinity : Math.abs(minimapMouseX - tickX);
     const indicatorDistance = Math.abs(indicatorX - tickX);
     const influence = Math.max(
       0,
-      Math.max(1 - pointerDistance / 120, 1 - indicatorDistance / 160)
+      Math.max(1 - pointerDistance / 140, 1 - indicatorDistance / 180)
     );
-    return baseHeight + influence * (index % 5 === 0 ? 10 : 8);
-  }, [minimapMouseX, minimapWidth, scrollProgress, TICK_COUNT]);
+    const boost = type === 'major' ? 12 : 6;
+    return baseHeight + influence * boost;
+  }, [minimapMouseX, minimapWidth, scrollProgress]);
+
+  const getTickOpacity = useCallback((type: 'major' | 'minor') => {
+    return type === 'major' ? 0.9 : 0.6;
+  }, []);
 
   useEffect(() => {
     if (selectedId) {
@@ -472,7 +492,7 @@ export default function YearInReview() {
           </div>
           <div
             ref={minimapRef}
-            className="mt-3 relative h-8 flex items-end"
+            className="mt-4 relative h-9 flex items-end select-none"
             role="progressbar"
             aria-label="Scroll position"
             aria-valuemin={0}
@@ -494,11 +514,15 @@ export default function YearInReview() {
           >
             <div className="absolute inset-x-0 bottom-1 h-[2px] bg-[var(--border-subtle)] rounded-full" />
             <div className="absolute inset-x-0 bottom-1 flex items-end justify-between pointer-events-none">
-              {Array.from({ length: TICK_COUNT }).map((_, index) => (
+              {tickPositions.map((tick, index) => (
                 <div
                   key={`tick-${index}`}
-                  className="w-[1px] bg-[var(--text-muted)] transition-[height] duration-150 ease-out opacity-70"
-                  style={{ height: getTickHeight(index) }}
+                  className="w-[1px] transition-[height] duration-150 ease-out"
+                  style={{
+                    height: getTickHeight(tick.pos, tick.type),
+                    backgroundColor: 'var(--text-muted)',
+                    opacity: getTickOpacity(tick.type),
+                  }}
                 />
               ))}
             </div>
