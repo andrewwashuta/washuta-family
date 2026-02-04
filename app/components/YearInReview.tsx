@@ -337,7 +337,6 @@ export default function YearInReview() {
   const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType !== 'mouse' || !scrollRef.current) return;
     stopMomentum();
-    scrollRef.current.setPointerCapture(e.pointerId);
     dragState.current.startX = e.clientX;
     dragState.current.scrollLeft = scrollRef.current.scrollLeft;
     dragState.current.lastX = e.clientX;
@@ -367,11 +366,11 @@ export default function YearInReview() {
 
   const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType !== 'mouse' || !scrollRef.current) return;
-    scrollRef.current.releasePointerCapture(e.pointerId);
     setIsDragging(false);
     if (Math.abs(dragState.current.velocity) > 0.5) {
       startMomentum();
     }
+    dragState.current.moved = false;
   }, [startMomentum]);
 
   useEffect(() => () => stopMomentum(), [stopMomentum]);
@@ -435,7 +434,7 @@ export default function YearInReview() {
             Month by month
           </motion.span>
         </div>
-        <div className="mx-auto max-w-3xl px-6 md:px-12">
+        <div className="overflow-visible">
           <div
             ref={scrollRef}
             onPointerDown={handlePointerDown}
@@ -443,7 +442,7 @@ export default function YearInReview() {
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className={`flex overflow-x-auto scroll-smooth hide-scrollbar gap-4 pr-[50vw] md:gap-3 py-4 md:py-5 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+            className={`flex overflow-x-auto overflow-y-visible scroll-smooth hide-scrollbar gap-4 pr-[50vw] md:gap-3 py-4 md:py-5 content-gutter-left ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
             style={{ touchAction: 'pan-x' }}
             role="region"
             aria-label="Monthly photo cards"
@@ -459,13 +458,7 @@ export default function YearInReview() {
                   style={{ zIndex: transform.zIndex }}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
-                  onClick={() => {
-                    if (dragState.current.moved) {
-                      dragState.current.moved = false;
-                      return;
-                    }
-                    setSelectedId(month.id);
-                  }}
+                  onClick={() => setSelectedId(month.id)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
                   role="button"
                   tabIndex={0}

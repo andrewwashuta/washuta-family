@@ -87,3 +87,12 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+.content-gutter-left {
+  padding-left: max(1.5rem, calc((100vw - 48rem) / 2 + 1.5rem));
+}
+@media (min-width: 768px) {
+  .content-gutter-left {
+    padding-left: max(3rem, calc((100vw - 48rem) / 2 + 3rem));
+  }
+}
