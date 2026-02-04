@@ -306,42 +306,62 @@ export default function YearInReview() {
         <ThemeToggle />
       </div>
 
-      <header className="relative pt-16 pb-10 px-6 md:px-12 max-w-6xl mx-auto">
+      <header className="relative pt-20 pb-14 px-6 md:px-12 max-w-6xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
         >
-          <div className="flex items-baseline justify-between mb-2">
-            <h1 className="text-[18px] tracking-[-0.03em] text-[var(--text-primary)]">
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
               Washuta Family
-            </h1>
-            <span className="text-[13px] text-[var(--text-muted)] font-sans">2025</span>
+            </span>
+            <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
+              2025
+            </span>
           </div>
-          <p className="text-[13px] text-[var(--text-muted)] font-sans mb-6">Year in Review</p>
-          <p className="text-[14px] text-[var(--text-secondary)] max-w-lg leading-relaxed">
-            A visual collection of our year — from snowy mornings to summer adventures, the moments we'll remember.
-          </p>
         </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+          className="text-[16px] md:text-[18px] leading-[1.5] tracking-[-0.02em] text-[var(--text-secondary)] mt-6 max-w-md"
+        >
+          A collection of our favorite frames from the year — snowy mornings, summer road trips, and the quiet moments in between.
+        </motion.p>
       </header>
 
       <main className="px-6 md:px-12 pb-20 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {YEAR_DATA.map((month, i) => (
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="inline-block text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans mb-6"
+        >
+          Month by month
+        </motion.span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {YEAR_DATA.map((month) => (
             <motion.div
               key={month.id}
-              layoutId={`card-${month.id}`}
               onClick={() => setSelectedId(month.id)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
               role="button"
               tabIndex={0}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.05 }}
-              className="relative group cursor-pointer p-2 rounded-lg border border-[var(--border-subtle)] hover:border-[var(--text-muted)] transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              style={{ boxShadow: 'var(--shadow-card)' }}
+              whileHover={{
+                y: -2,
+                boxShadow: 'var(--shadow-card-hover)',
+                transition: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] },
+              }}
+              className="relative group cursor-pointer p-2 rounded-xl border border-[var(--border-subtle)] transition-colors duration-300"
             >
-              <div className="aspect-[4/5] overflow-hidden rounded">
+              <div className="aspect-[4/5] overflow-hidden rounded-lg">
                 <img
                   src={month.cover}
                   alt={month.title}
@@ -349,15 +369,12 @@ export default function YearInReview() {
                 />
               </div>
 
-              <motion.div
-                layoutId={`content-${month.id}`}
-                className="pt-3 px-1"
-              >
+              <div className="pt-3 px-1">
                 <div className="flex items-baseline justify-between">
                   <span className="text-[14px] text-[var(--text-primary)]">{month.title}</span>
                   <span className="text-[13px] text-[var(--text-muted)] font-sans">{month.month}</span>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -365,49 +382,59 @@ export default function YearInReview() {
 
       <AnimatePresence>
         {selectedId && selectedMonth && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-8">
 
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
               onClick={closeModal}
-              className="absolute inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm"
+              className="absolute inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-md"
             />
 
             <motion.div
-              layoutId={`card-${selectedId}`}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
               role="dialog"
               aria-modal="true"
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
-              className="relative w-full max-w-3xl max-h-[90vh] bg-[var(--bg-elevated)] overflow-hidden"
+              style={{ boxShadow: 'var(--shadow-modal)' }}
+              className="relative w-full max-w-3xl max-h-[88vh] md:max-h-[90vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
-              <button
-                ref={closeButtonRef}
-                onClick={(e) => { e.stopPropagation(); closeModal(); }}
-                aria-label="Close"
-                className="absolute top-4 right-4 z-50 p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-              >
-                <X size={18} />
-              </button>
+              {/* Fixed header */}
+              <div className="flex items-center justify-between px-6 md:px-8 pt-5 pb-3 border-b border-[var(--border-subtle)]">
+                <div className="flex items-baseline gap-3 min-w-0">
+                  <span className="text-[14px] text-[var(--text-primary)] truncate">{selectedMonth.title}</span>
+                  <span className="text-[13px] text-[var(--text-muted)] font-sans whitespace-nowrap">{selectedMonth.month} {selectedMonth.year}</span>
+                </div>
+                <button
+                  ref={closeButtonRef}
+                  onClick={(e) => { e.stopPropagation(); closeModal(); }}
+                  aria-label="Close"
+                  className="ml-4 flex-shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
 
-              <div className="p-6 md:p-8 flex flex-col overflow-y-auto max-h-[90vh]">
-                <motion.div layoutId={`content-${selectedId}`} className="mb-4">
-                  <div className="flex items-baseline justify-between mb-4">
-                    <span className="text-[14px] text-[var(--text-primary)]">{selectedMonth.title}</span>
-                    <span className="text-[13px] text-[var(--text-muted)] font-sans">{selectedMonth.month} {selectedMonth.year}</span>
-                  </div>
-
-                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
-                    {selectedMonth.description}
-                  </p>
-                </motion.div>
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto px-6 md:px-8 py-5">
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.25, ease: 'easeOut' }}
+                  className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-5"
+                >
+                  {selectedMonth.description}
+                </motion.p>
 
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.15 }}
-                  className="pt-4"
+                  transition={{ delay: 0.15, duration: 0.3, ease: 'easeOut' }}
                 >
                   <GalleryCarousel images={selectedMonth.gallery} />
                 </motion.div>

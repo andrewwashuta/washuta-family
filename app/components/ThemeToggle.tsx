@@ -1,9 +1,23 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Monitor } from "lucide-react";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+
+const CYCLE = ["system", "light", "dark"] as const;
+
+const icons = {
+  system: Monitor,
+  light: Sun,
+  dark: Moon,
+};
+
+const labels = {
+  system: "System",
+  light: "Light",
+  dark: "Dark",
+};
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -14,24 +28,33 @@ export function ThemeToggle() {
   }, []);
 
   if (!mounted) {
-    return (
-      <div className="w-10 h-10 rounded-full bg-[var(--overlay-light)]" />
-    );
+    return <div className="h-8 w-8" />;
   }
+
+  const current = (theme as typeof CYCLE[number]) || "system";
+  const nextIndex = (CYCLE.indexOf(current) + 1) % CYCLE.length;
+  const next = CYCLE[nextIndex];
+  const Icon = icons[current];
 
   return (
     <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="p-2.5 rounded-full bg-[var(--overlay-light)] hover:bg-[var(--overlay-medium)] border border-[var(--border-muted)] backdrop-blur-sm transition-colors"
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      whileTap={{ scale: 0.92 }}
+      onClick={() => setTheme(next)}
+      className="relative h-8 w-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors duration-200"
+      aria-label={`Theme: ${labels[current]}. Switch to ${labels[next]}`}
     >
-      {theme === "dark" ? (
-        <Sun size={20} className="text-[var(--text-secondary)]" />
-      ) : (
-        <Moon size={20} className="text-[var(--text-secondary)]" />
-      )}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={current}
+          initial={{ opacity: 0, scale: 0.8, rotate: -30 }}
+          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+          exit={{ opacity: 0, scale: 0.8, rotate: 30 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="absolute"
+        >
+          <Icon size={16} strokeWidth={1.5} />
+        </motion.span>
+      </AnimatePresence>
     </motion.button>
   );
 }
