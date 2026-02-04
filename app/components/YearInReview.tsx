@@ -306,9 +306,12 @@ export default function YearInReview() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [minimapMouseX, setMinimapMouseX] = useState<number | null>(null);
+  const [minimapWidth, setMinimapWidth] = useState(0);
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const minimapRef = useRef<HTMLDivElement>(null);
 
   const closeModal = useCallback(() => setSelectedId(null), []);
 
@@ -324,6 +327,26 @@ export default function YearInReview() {
     window.addEventListener('resize', handleScroll);
     return () => window.removeEventListener('resize', handleScroll);
   }, [handleScroll]);
+
+  useEffect(() => {
+    const updateMinimapWidth = () => {
+      if (minimapRef.current) {
+        setMinimapWidth(minimapRef.current.clientWidth);
+      }
+    };
+    updateMinimapWidth();
+    window.addEventListener('resize', updateMinimapWidth);
+    return () => window.removeEventListener('resize', updateMinimapWidth);
+  }, []);
+
+  const getTickHeight = useCallback((index: number) => {
+    const baseHeight = index % 5 === 0 ? 12 : 6;
+    if (minimapMouseX === null || minimapWidth === 0) return baseHeight;
+    const tickX = (index / 29) * minimapWidth;
+    const distance = Math.abs(minimapMouseX - tickX);
+    const influence = Math.max(0, 1 - distance / 120);
+    return baseHeight + influence * (index % 5 === 0 ? 10 : 8);
+  }, [minimapMouseX, minimapWidth]);
 
   useEffect(() => {
     if (selectedId) {
@@ -442,12 +465,19 @@ export default function YearInReview() {
             <span className="opacity-60">{Math.round(scrollProgress * 100)}%</span>
           </div>
           <div
+            ref={minimapRef}
             className="mt-3 relative h-8 flex items-end"
             role="progressbar"
             aria-label="Scroll position"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(scrollProgress * 100)}
+            onPointerMove={(event) => {
+              if (!minimapRef.current) return;
+              const rect = minimapRef.current.getBoundingClientRect();
+              setMinimapMouseX(event.clientX - rect.left);
+            }}
+            onPointerLeave={() => setMinimapMouseX(null)}
             onClick={(event) => {
               if (!scrollRef.current) return;
               const rect = event.currentTarget.getBoundingClientRect();
@@ -461,8 +491,8 @@ export default function YearInReview() {
               {Array.from({ length: 30 }).map((_, index) => (
                 <div
                   key={`tick-${index}`}
-                  className="w-[1px] bg-[var(--text-muted)]/40"
-                  style={{ height: index % 5 === 0 ? 12 : 6 }}
+                  className="w-[1px] bg-[var(--text-muted)]/40 transition-[height] duration-150 ease-out"
+                  style={{ height: getTickHeight(index) }}
                 />
               ))}
             </div>
