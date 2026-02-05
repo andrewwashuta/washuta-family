@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -219,9 +219,10 @@ function getHoverTransform(index: number, hoveredIndex: number | null) {
 type GalleryCarouselProps = {
   images: Array<{src: string; caption: string}>;
   variant?: 'modal' | 'default';
+  onExpandImage?: (url: string) => void;
 };
 
-const GalleryCarousel = ({ images, variant = 'modal' }: GalleryCarouselProps) => {
+const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCarouselProps) => {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -254,8 +255,8 @@ const GalleryCarousel = ({ images, variant = 'modal' }: GalleryCarouselProps) =>
 
   const frameClassName =
     variant === 'modal'
-      ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden group bg-[var(--image-bg)] rounded-xl'
-      : 'relative w-full aspect-[4/5] overflow-hidden group bg-[var(--image-bg)]';
+      ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden bg-[var(--image-bg)] rounded-xl'
+      : 'relative w-full aspect-[4/5] overflow-hidden bg-[var(--image-bg)]';
 
   return (
     <div className="w-full">
@@ -278,30 +279,45 @@ const GalleryCarousel = ({ images, variant = 'modal' }: GalleryCarouselProps) =>
             onDragEnd={handleDragEnd}
           />
         </AnimatePresence>
-
-        {images.length > 1 && (
-          <div className="absolute inset-0 flex items-center justify-between px-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity pointer-events-none">
-            <button
-              onClick={prev}
-              aria-label="Previous image"
-              className="p-1.5 rounded-lg bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all pointer-events-auto"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={next}
-              aria-label="Next image"
-              className="p-1.5 rounded-lg bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all pointer-events-auto"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
+        {variant === 'modal' && onExpandImage && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onExpandImage(images[index].src); }}
+            aria-label="Expand image"
+            className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all"
+          >
+            <Maximize2 size={18} />
+          </button>
         )}
       </div>
 
-      <div className="mt-3 flex items-baseline justify-between font-sans" aria-live="polite">
-        <span className="text-[13px] text-[var(--text-muted)]">{images[index].caption}</span>
-        <span className="text-[13px] text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
+      <div className="mt-3 flex items-center justify-between gap-2 font-sans" aria-live="polite">
+        {images.length > 1 ? (
+          <>
+            <button
+              onClick={prev}
+              aria-label="Previous image"
+              className="flex-shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <div className="flex-1 min-w-0 flex items-baseline justify-center gap-2">
+              <span className="text-[13px] text-[var(--text-muted)] truncate">{images[index].caption}</span>
+              <span className="flex-shrink-0 text-[13px] text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
+            </div>
+            <button
+              onClick={next}
+              aria-label="Next image"
+              className="flex-shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="flex-1 min-w-0 text-[13px] text-[var(--text-muted)] truncate">{images[index].caption}</span>
+            <span className="flex-shrink-0 text-[13px] text-[var(--text-muted)] opacity-60">1/1</span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -315,6 +331,7 @@ export default function YearInReview() {
   const shadowModal = isDark ? SHADOW_MODAL_DARK : SHADOW_MODAL_LIGHT;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [expandedImageUrl, setExpandedImageUrl] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -326,8 +343,12 @@ export default function YearInReview() {
   const dragStartX = useRef(0);
   const dragScrollLeft = useRef(0);
   const wasDragged = useRef(false);
+  const lastMouseRef = useRef({ x: 0, y: 0 });
 
-  const closeModal = useCallback(() => setSelectedId(null), []);
+  const closeModal = useCallback(() => {
+    setExpandedImageUrl(null);
+    setSelectedId(null);
+  }, []);
 
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
@@ -390,17 +411,46 @@ export default function YearInReview() {
   }, []);
 
   useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      lastMouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  const restoreHoverAfterModalClose = useCallback(() => {
+    const { x, y } = lastMouseRef.current;
+    const el = document.elementFromPoint(x, y);
+    if (!el) return;
+    let node: HTMLElement | null = el as HTMLElement;
+    while (node) {
+      const idx = node.getAttribute?.('data-card-index');
+      if (idx != null) {
+        const index = parseInt(idx, 10);
+        if (!isNaN(index)) setHoveredIndex(index);
+        break;
+      }
+      node = node.parentElement;
+    }
+  }, []);
+
+  useEffect(() => {
     if (selectedId) {
       document.body.style.overflow = 'hidden';
       closeButtonRef.current?.focus();
-      const handleEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); };
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          if (expandedImageUrl) setExpandedImageUrl(null);
+          else closeModal();
+        }
+      };
       document.addEventListener('keydown', handleEscape);
       return () => document.removeEventListener('keydown', handleEscape);
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; };
-  }, [selectedId, closeModal]);
+  }, [selectedId, closeModal, expandedImageUrl]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors duration-300">
@@ -484,6 +534,7 @@ export default function YearInReview() {
                 <motion.div
                   key={month.id}
                   layoutId={`card-${month.id}`}
+                  data-card-index={index}
                   className="flex-shrink-0 w-[75vw] md:w-[232px] lg:w-[260px] rounded-xl"
                   animate={{ y: transform.y, scale: transform.scale, boxShadow: shadowCard }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
@@ -549,7 +600,33 @@ export default function YearInReview() {
         </div>
       </main>
 
+      {/* Fullscreen expanded image overlay */}
       <AnimatePresence>
+        {expandedImageUrl && (
+          <motion.div
+            key="expanded-image"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/95"
+            onClick={() => setExpandedImageUrl(null)}
+            role="button"
+            tabIndex={0}
+            aria-label="Close expanded image"
+            onKeyDown={(e) => { if (e.key === 'Escape') setExpandedImageUrl(null); }}
+          >
+            <img
+              src={expandedImageUrl}
+              alt="Expanded view"
+              className="max-w-full max-h-full object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence onExitComplete={restoreHoverAfterModalClose}>
         {selectedId && selectedMonth && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-8">
 
@@ -569,13 +646,13 @@ export default function YearInReview() {
               role="dialog"
               aria-modal="true"
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
-              className="relative w-full max-w-lg md:max-w-[560px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
+              className="relative w-full max-w-lg md:max-w-[720px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
-              {/* Header — matches card style */}
+              {/* Header — title (serif), month badge (sans), close */}
               <div className="flex items-center justify-between px-5 md:px-6 h-[44px] select-none">
-                <div className="flex items-center justify-between flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <span className="text-[14px] text-[var(--text-primary)] truncate">{selectedMonth.title}</span>
-                  <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0 ml-3">{selectedMonth.month} {selectedMonth.year}</span>
+                  <span className="flex-shrink-0 px-2.5 py-1 rounded-full text-[11px] font-sans text-[var(--text-muted)] bg-[var(--image-bg)] border border-[var(--border-subtle)]">{selectedMonth.month}</span>
                 </div>
                 <button
                   ref={closeButtonRef}
@@ -599,8 +676,13 @@ export default function YearInReview() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.15, duration: 0.3, ease: 'easeOut' }}
                 >
-                  <GalleryCarousel images={selectedMonth.gallery} variant="modal" />
+                  <GalleryCarousel images={selectedMonth.gallery} variant="modal" onExpandImage={(url) => setExpandedImageUrl(url)} />
                 </motion.div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex-shrink-0 px-5 md:px-6 py-4 border-t border-[var(--border-subtle)]">
+                <span className="text-[11px] font-sans text-[var(--text-muted)]">Made with love in New Mexico</span>
               </div>
 
             </motion.div>
