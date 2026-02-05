@@ -1,9 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, MotionValue } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CentralIcon } from '@central-icons-react/all';
+import { useTheme } from 'next-themes';
 import { ThemeToggle } from './ThemeToggle';
+
+const SHADOW_CARD_LIGHT = '0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02)';
+const SHADOW_CARD_DARK = '0 1px 2px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.15)';
+const SHADOW_CARD_HOVER_LIGHT = '0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04)';
+const SHADOW_CARD_HOVER_DARK = '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)';
+const SHADOW_MODAL_LIGHT = '0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)';
+const SHADOW_MODAL_DARK = '0 8px 30px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25)';
 
 const YEAR_DATA = [
   {
@@ -200,22 +208,23 @@ const YEAR_DATA = [
   },
 ];
 
-function getHoverTransform(index: number, hoveredIndex: number | null) {
+function getHoverTransform(index: number, hoveredIndex: number | null, shadowCard: string, shadowCardHover: string) {
   if (hoveredIndex === null) {
-    return { y: 0, scale: 1, zIndex: index };
+    return { y: 0, scale: 1, zIndex: index, boxShadow: shadowCard };
   }
   if (index === hoveredIndex) {
-    return { y: -6, scale: 1.02, zIndex: 50 };
+    return { y: -6, scale: 1.02, zIndex: 50, boxShadow: shadowCardHover };
   }
-  return { y: 0, scale: 1, zIndex: index };
+  return { y: 0, scale: 1, zIndex: index, boxShadow: shadowCard };
 }
 
 type GalleryCarouselProps = {
   images: Array<{src: string; caption: string}>;
   variant?: 'modal' | 'default';
+  onExpandImage?: (url: string) => void;
 };
 
-const GalleryCarousel = ({ images, variant = 'modal' }: GalleryCarouselProps) => {
+const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCarouselProps) => {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -248,8 +257,8 @@ const GalleryCarousel = ({ images, variant = 'modal' }: GalleryCarouselProps) =>
 
   const frameClassName =
     variant === 'modal'
-      ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden group bg-[var(--image-bg)] rounded-xl'
-      : 'relative w-full aspect-[4/5] overflow-hidden group bg-[var(--image-bg)]';
+      ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden bg-[var(--image-bg)] rounded-xl group'
+      : 'relative w-full aspect-[4/5] overflow-hidden bg-[var(--image-bg)]';
 
   return (
     <div className="w-full">
@@ -272,136 +281,128 @@ const GalleryCarousel = ({ images, variant = 'modal' }: GalleryCarouselProps) =>
             onDragEnd={handleDragEnd}
           />
         </AnimatePresence>
-
-        {images.length > 1 && (
-          <div className="absolute inset-0 flex items-center justify-between px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            <button
-              onClick={prev}
-              aria-label="Previous image"
-              className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={next}
-              aria-label="Next image"
-              className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
+        {variant === 'modal' && onExpandImage && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onExpandImage(images[index].src); }}
+            aria-label="Expand image"
+            className="absolute top-2 right-2 p-1 rounded-md bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
+          >
+            <CentralIcon name="IconExpandSimple" join="round" fill="outlined" radius="3" stroke="2" size={14} />
+          </button>
         )}
       </div>
 
-      <div className="mt-3 flex items-baseline justify-between font-sans" aria-live="polite">
-        <span className="text-[13px] text-[var(--text-muted)]">{images[index].caption}</span>
-        <span className="text-[13px] text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
+      <div className="mt-3 flex items-center gap-2 font-sans text-left" aria-live="polite">
+        <span className="flex-1 min-w-0 text-[13px] text-[var(--text-muted)] truncate text-left">{images[index].caption}</span>
+        <div className="flex-shrink-0 flex items-center gap-1">
+          <span className="text-[13px] text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prev}
+                aria-label="Previous image"
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+              >
+                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={18} />
+              </button>
+              <button
+                onClick={next}
+                aria-label="Next image"
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+              >
+                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={18} />
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-const MinimapTick = React.memo(({
-  pos,
-  type,
-  minimapWidthRef,
-  scrollProgressMV,
-  minimapMouseXMV,
-  pointerRadius,
-  indicatorRadius,
-}: {
-  pos: number;
-  type: 'major' | 'minor';
-  minimapWidthRef: React.RefObject<number | null>;
-  scrollProgressMV: MotionValue<number>;
-  minimapMouseXMV: MotionValue<number>;
-  pointerRadius: number;
-  indicatorRadius: number;
-}) => {
-  const baseHeight = type === 'major' ? 16 : 8;
-  const maxHeight = type === 'major' ? 28 : 14;
-
-  const scaleY = useTransform(
-    [scrollProgressMV, minimapMouseXMV],
-    ([scrollProg, mouseX]: number[]) => {
-      const width = minimapWidthRef.current ?? 0;
-      if (width === 0) return 1;
-      const tickX = pos * width;
-      const indicatorX = scrollProg * width;
-      const pointerDistance = mouseX < 0 ? Infinity : Math.abs(mouseX - tickX);
-      const indicatorDistance = Math.abs(indicatorX - tickX);
-      const influence = Math.max(
-        0,
-        Math.max(1 - pointerDistance / pointerRadius, 1 - indicatorDistance / indicatorRadius)
-      );
-      return 1 + influence * ((maxHeight / baseHeight) - 1);
-    }
-  );
-
-  const smoothScaleY = useSpring(scaleY, { stiffness: 300, damping: 25 });
-
-  return (
-    <motion.div
-      className="w-[1px] origin-bottom"
-      style={{
-        height: baseHeight,
-        scaleY: smoothScaleY,
-        backgroundColor: 'var(--text-muted)',
-        opacity: type === 'major' ? 0.9 : 0.6,
-      }}
-    />
-  );
-});
-MinimapTick.displayName = 'MinimapTick';
-
-const ScrollPercent = ({ progress }: { progress: MotionValue<number> }) => {
-  const display = useTransform(progress, v => `${Math.round(v * 100)}%`);
-  return <motion.span className="opacity-60">{display}</motion.span>;
-};
 
 export default function YearInReview() {
-  const MONTH_COUNT = YEAR_DATA.length;
-  const MINOR_PER_INTERVAL = 4; // ticks between major month stops
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  const shadowCard = isDark ? SHADOW_CARD_DARK : SHADOW_CARD_LIGHT;
+  const shadowCardHover = isDark ? SHADOW_CARD_HOVER_DARK : SHADOW_CARD_HOVER_LIGHT;
+  const shadowModal = isDark ? SHADOW_MODAL_DARK : SHADOW_MODAL_LIGHT;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [expandedImageUrl, setExpandedImageUrl] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const scrollProgressMV = useMotionValue(0);
-  const smoothScrollProgress = useSpring(scrollProgressMV, { stiffness: 500, damping: 40 });
-  const minimapMouseXMV = useMotionValue(-1);
-  const minimapWidthRef = useRef(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [hasScrolled, setHasScrolled] = useState(false);
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const minimapRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragScrollLeft = useRef(0);
+  const wasDragged = useRef(false);
+  const lastMouseRef = useRef({ x: 0, y: 0 });
 
-  const pointerRadius = isMobile ? 80 : 140;
-  const indicatorRadius = isMobile ? 100 : 180;
-
-  const closeModal = useCallback(() => setSelectedId(null), []);
+  const closeModal = useCallback(() => {
+    setExpandedImageUrl(null);
+    setSelectedId(null);
+  }, []);
 
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
     const maxScroll = Math.max(1, scrollWidth - clientWidth);
-    scrollProgressMV.set(Math.min(1, Math.max(0, scrollLeft / maxScroll)));
-  }, [scrollProgressMV]);
+    setCanScrollLeft(scrollLeft > 5);
+    setCanScrollRight(scrollLeft < maxScroll - 5);
+  }, []);
+
+  const scrollByCard = useCallback((direction: 'left' | 'right') => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const cards = container.querySelectorAll('[data-card-index]');
+    if (cards.length === 0) return;
+    const first = cards[0] as HTMLElement;
+    const second = cards[1] as HTMLElement;
+    const cardWidth = first.offsetWidth;
+    const gap = second ? second.offsetLeft - first.offsetLeft - first.offsetWidth : 12;
+    const step = cardWidth + gap;
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    const maxScroll = Math.max(0, scrollWidth - clientWidth);
+    const currentIndex = Math.round(scrollLeft / step);
+    const targetIndex = direction === 'right'
+      ? Math.min(currentIndex + 1, cards.length - 1)
+      : Math.max(currentIndex - 1, 0);
+    const targetScroll = Math.min(targetIndex * step, maxScroll);
+    container.scrollTo({ left: targetScroll, behavior: 'smooth' });
+  }, []);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (isMobile) return;
+    isDragging.current = true;
+    wasDragged.current = false;
+    dragStartX.current = e.clientX;
+    dragScrollLeft.current = scrollRef.current?.scrollLeft ?? 0;
+    (e.currentTarget as HTMLElement).style.cursor = 'grabbing';
+  }, [isMobile]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    e.preventDefault();
+    const dx = e.clientX - dragStartX.current;
+    if (Math.abs(dx) > 5) wasDragged.current = true;
+    scrollRef.current.scrollLeft = dragScrollLeft.current - dx;
+  }, []);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    isDragging.current = false;
+    (e.currentTarget as HTMLElement).style.cursor = '';
+  }, []);
 
   useEffect(() => {
     handleScroll();
     window.addEventListener('resize', handleScroll);
     return () => window.removeEventListener('resize', handleScroll);
   }, [handleScroll]);
-
-  useEffect(() => {
-    const updateMinimapWidth = () => {
-      if (minimapRef.current) {
-        minimapWidthRef.current = minimapRef.current.clientWidth;
-      }
-    };
-    updateMinimapWidth();
-    window.addEventListener('resize', updateMinimapWidth);
-    return () => window.removeEventListener('resize', updateMinimapWidth);
-  }, []);
 
   useEffect(() => {
     const mql = window.matchMedia('(max-width: 767px)');
@@ -411,37 +412,95 @@ export default function YearInReview() {
     return () => mql.removeEventListener('change', handler);
   }, []);
 
-  const tickPositions = React.useMemo(() => {
-    const ticks: Array<{ pos: number; type: 'major' | 'minor' }> = [];
-    for (let m = 0; m < MONTH_COUNT; m++) {
-      ticks.push({ pos: m / Math.max(1, MONTH_COUNT - 1), type: 'major' });
-      if (m < MONTH_COUNT - 1) {
-        for (let k = 1; k <= MINOR_PER_INTERVAL; k++) {
-          const pos = (m + k / (MINOR_PER_INTERVAL + 1)) / Math.max(1, MONTH_COUNT - 1);
-          ticks.push({ pos, type: 'minor' });
-        }
-      }
-    }
-    return ticks;
-  }, [MONTH_COUNT]);
+  // #region agent log
+  useEffect(() => {
+    const log = () => {
+      const header = document.querySelector('[data-debug="header-month"]');
+      const scroll = document.querySelector('[data-debug="card-scroll"]');
+      const firstCard = scroll?.querySelector('[data-card-index="0"]');
+      const headerRect = header?.getBoundingClientRect();
+      const cardRect = firstCard?.getBoundingClientRect();
+      const headerStyle = header ? getComputedStyle(header as HTMLElement) : null;
+      const scrollStyle = scroll ? getComputedStyle(scroll as HTMLElement) : null;
+      const headerPadL = headerStyle ? parseFloat(headerStyle.paddingLeft) : 0;
+      const textStart = headerRect ? headerRect.left + headerPadL : null;
+      const alignmentDiff = textStart != null && cardRect ? cardRect.left - textStart : null;
+      fetch('http://127.0.0.1:7242/ingest/245655c4-d588-439c-b7aa-d76fd16856e9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'YearInReview.tsx:alignment',message:'layout debug',data:{innerWidth:window.innerWidth,clientWidth:document.documentElement.clientWidth,scrollbarWidth:window.innerWidth-document.documentElement.clientWidth,mdBreakpoint:window.innerWidth>=768,headerLeft:headerRect?.left,headerPaddingLeft:headerPadL,textStart,cardLeft:cardRect?.left,scrollPaddingLeft:scrollStyle?.paddingLeft,alignmentDiff},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'H1'})}).catch(()=>{});
+    };
+    const t = setTimeout(log, 500);
+    window.addEventListener('resize', log);
+    return () => { clearTimeout(t); window.removeEventListener('resize', log); };
+  }, []);
+  // #endregion
 
-  const indicatorLeft = useTransform(smoothScrollProgress, v => `${v * 100}%`);
+  useEffect(() => {
+    const handleWindowScroll = () => setHasScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', handleWindowScroll, { passive: true });
+    handleWindowScroll();
+    return () => window.removeEventListener('scroll', handleWindowScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      lastMouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  const restoreHoverAfterModalClose = useCallback(() => {
+    const { x, y } = lastMouseRef.current;
+    const el = document.elementFromPoint(x, y);
+    if (!el) return;
+    let node: HTMLElement | null = el as HTMLElement;
+    while (node) {
+      const idx = node.getAttribute?.('data-card-index');
+      if (idx != null) {
+        const index = parseInt(idx, 10);
+        if (!isNaN(index)) setHoveredIndex(index);
+        break;
+      }
+      node = node.parentElement;
+    }
+  }, []);
 
   useEffect(() => {
     if (selectedId) {
       document.body.style.overflow = 'hidden';
       closeButtonRef.current?.focus();
-      const handleEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); };
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          if (expandedImageUrl) setExpandedImageUrl(null);
+          else closeModal();
+        }
+      };
       document.addEventListener('keydown', handleEscape);
       return () => document.removeEventListener('keydown', handleEscape);
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; };
-  }, [selectedId, closeModal]);
+  }, [selectedId, closeModal, expandedImageUrl]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors duration-300">
+
+      <div
+        className="fixed top-0 left-0 right-0 z-30 h-16 pointer-events-none transition-opacity duration-300"
+        style={{ opacity: hasScrolled ? 1 : 0 }}
+      >
+        <div
+          className="absolute inset-0 backdrop-blur-sm"
+          style={{
+            maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to bottom, var(--bg-primary) 0%, transparent 100%)' }}
+        />
+      </div>
 
       <div className="fixed top-6 right-6 z-40">
         <ThemeToggle />
@@ -476,7 +535,7 @@ export default function YearInReview() {
       </header>
 
       <main className="pb-20">
-        <div className="mx-auto max-w-3xl px-6 md:px-12">
+        <div data-debug="header-month" className="mx-auto max-w-3xl px-6 md:px-12">
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -489,25 +548,32 @@ export default function YearInReview() {
         <div className="overflow-visible">
           <div
             ref={scrollRef}
+            data-debug="card-scroll"
             onScroll={handleScroll}
-            className="flex overflow-x-auto overflow-y-visible scroll-smooth hide-scrollbar gap-4 md:gap-3 py-4 md:py-5 content-gutter-left content-gutter-right"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+            className="flex overflow-x-auto overflow-y-visible scroll-smooth hide-scrollbar gap-4 md:gap-3 py-4 md:py-5 content-gutter-left content-gutter-right md:cursor-grab"
             style={{ touchAction: 'pan-x' }}
             role="region"
             aria-label="Monthly photo cards"
           >
             {YEAR_DATA.map((month, index) => {
-              const transform = getHoverTransform(index, hoveredIndex);
+              const transform = getHoverTransform(index, hoveredIndex, shadowCard, shadowCardHover);
               return (
                 <motion.div
                   key={month.id}
                   layoutId={`card-${month.id}`}
-                  className="flex-shrink-0 w-[75vw] md:w-[200px] lg:w-[220px]"
-                  animate={{ y: transform.y, scale: transform.scale }}
+                  data-card-index={index}
+                  className="flex-shrink-0 w-[75vw] md:w-[232px] lg:w-[260px] rounded-xl"
+                  animate={{ y: transform.y, scale: transform.scale, boxShadow: transform.boxShadow }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   style={{ zIndex: transform.zIndex, opacity: selectedId === month.id ? 0 : 1 }}
                   onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseMove={() => { if (hoveredIndex !== index && !selectedId) setHoveredIndex(index); }}
                   onMouseLeave={() => setHoveredIndex(null)}
-                  onClick={() => setSelectedId(month.id)}
+                  onClick={() => { if (!wasDragged.current) setSelectedId(month.id); }}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
                   role="button"
                   tabIndex={0}
@@ -515,7 +581,6 @@ export default function YearInReview() {
                 >
                   <div
                     className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden"
-                    style={{ boxShadow: 'var(--shadow-card)' }}
                   >
                     <div className="h-[44px] flex items-center justify-between px-4 select-none">
                       <span className="text-[14px] text-[var(--text-primary)] truncate">{month.title}</span>
@@ -540,55 +605,64 @@ export default function YearInReview() {
           </div>
         </div>
         <div className="mx-auto max-w-3xl px-6 md:px-12">
-          <div className="mt-3 flex items-center justify-between text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
-            <span>{isMobile ? 'Swipe to explore' : 'Scroll to explore'}</span>
-            <ScrollPercent progress={scrollProgressMV} />
-          </div>
-          <div
-            ref={minimapRef}
-            className="mt-4 relative h-9 flex items-end select-none"
-            role="progressbar"
-            aria-label="Scroll position"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            onPointerMove={(event) => {
-              if (!minimapRef.current) return;
-              const rect = minimapRef.current.getBoundingClientRect();
-              minimapMouseXMV.set(event.clientX - rect.left);
-            }}
-            onPointerLeave={() => minimapMouseXMV.set(-1)}
-            onClick={(event) => {
-              if (!scrollRef.current) return;
-              const rect = event.currentTarget.getBoundingClientRect();
-              const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-              const maxScroll = scrollRef.current.scrollWidth - scrollRef.current.clientWidth;
-              scrollRef.current.scrollTo({ left: maxScroll * ratio, behavior: 'smooth' });
-            }}
-          >
-            <div className="absolute inset-x-0 bottom-1 h-[2px] bg-[var(--border-subtle)] rounded-full" />
-            <div className="absolute inset-x-0 bottom-1 flex items-end justify-between pointer-events-none">
-              {tickPositions.map((tick, index) => (
-                <MinimapTick
-                  key={`tick-${index}`}
-                  pos={tick.pos}
-                  type={tick.type}
-                  minimapWidthRef={minimapWidthRef}
-                  scrollProgressMV={scrollProgressMV}
-                  minimapMouseXMV={minimapMouseXMV}
-                  pointerRadius={pointerRadius}
-                  indicatorRadius={indicatorRadius}
-                />
-              ))}
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
+              {isMobile ? 'Swipe to explore' : 'Scroll to explore'}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => scrollByCard('left')}
+                disabled={!canScrollLeft}
+                aria-label="Scroll left"
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={16} />
+              </button>
+              <button
+                onClick={() => scrollByCard('right')}
+                disabled={!canScrollRight}
+                aria-label="Scroll right"
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={16} />
+              </button>
             </div>
-            <motion.div
-              className="absolute bottom-1 h-[14px] w-[1px] bg-[var(--text-muted)]"
-              style={{ left: indicatorLeft }}
-            />
           </div>
+        </div>
+
+        {/* Footer — main view */}
+        <div className="mx-auto max-w-3xl px-6 md:px-12 pt-16 pb-8">
+          <span className="text-[11px] font-sans text-[var(--text-muted)]">Made with love in New Mexico</span>
         </div>
       </main>
 
+      {/* Fullscreen expanded image overlay */}
       <AnimatePresence>
+        {expandedImageUrl && (
+          <motion.div
+            key="expanded-image"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/95"
+            onClick={() => setExpandedImageUrl(null)}
+            role="button"
+            tabIndex={0}
+            aria-label="Close expanded image"
+            onKeyDown={(e) => { if (e.key === 'Escape') setExpandedImageUrl(null); }}
+          >
+            <img
+              src={expandedImageUrl}
+              alt="Expanded view"
+              className="max-w-full max-h-full object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence onExitComplete={restoreHoverAfterModalClose}>
         {selectedId && selectedMonth && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-8">
 
@@ -603,46 +677,42 @@ export default function YearInReview() {
 
             <motion.div
               layoutId={`card-${selectedId}`}
+              animate={{ boxShadow: shadowModal }}
               transition={{ type: 'spring', stiffness: 400, damping: 35 }}
               role="dialog"
               aria-modal="true"
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
-              style={{ boxShadow: 'var(--shadow-modal)' }}
-              className="relative w-full max-w-2xl md:max-w-[760px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
+              className="relative w-full max-w-lg md:max-w-[720px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
-              {/* Fixed header */}
-              <div className="flex items-center justify-between px-6 md:px-8 pt-5 pb-3 border-b border-[var(--border-subtle)]">
-                <div className="flex items-baseline gap-3 min-w-0">
-                  <span className="text-[14px] text-[var(--text-primary)] truncate">{selectedMonth.title}</span>
-                  <span className="text-[13px] text-[var(--text-muted)] font-sans whitespace-nowrap">{selectedMonth.month} {selectedMonth.year}</span>
+              {/* Header — matches card: title left, month right, more padding up top, X */}
+              <div className="flex items-center justify-between px-5 md:px-6 pt-8 pb-4 select-none">
+                <span className="flex-1 min-w-0 text-[14px] text-[var(--text-primary)] truncate pr-3">{selectedMonth.title}</span>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className="text-[13px] text-[var(--text-muted)] font-sans">{selectedMonth.month}</span>
+                  <button
+                    ref={closeButtonRef}
+                    onClick={(e) => { e.stopPropagation(); closeModal(); }}
+                    aria-label="Close"
+                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+                  >
+                    <CentralIcon name="IconCrossMedium" join="round" fill="outlined" radius="3" stroke="2" size={16} />
+                  </button>
                 </div>
-                <button
-                  ref={closeButtonRef}
-                  onClick={(e) => { e.stopPropagation(); closeModal(); }}
-                  aria-label="Close"
-                  className="ml-4 flex-shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
-                >
-                  <X size={16} />
-                </button>
               </div>
 
               {/* Scrollable content */}
-              <div className="flex-1 overflow-y-auto px-6 md:px-8 py-5">
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.25, ease: 'easeOut' }}
-                  className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-5"
-                >
-                  {selectedMonth.description}
-                </motion.p>
-
+              <div className="flex-1 overflow-y-auto px-5 md:px-6 pb-5">
+                {selectedMonth.description && (
+                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-4">
+                    {selectedMonth.description}
+                  </p>
+                )}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.25, duration: 0.3, ease: 'easeOut' }}
+                  transition={{ delay: 0.15, duration: 0.3, ease: 'easeOut' }}
                 >
-                  <GalleryCarousel images={selectedMonth.gallery} variant="modal" />
+                  <GalleryCarousel images={selectedMonth.gallery} variant="modal" onExpandImage={(url) => setExpandedImageUrl(url)} />
                 </motion.div>
               </div>
 
