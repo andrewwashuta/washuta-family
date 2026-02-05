@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, MotionValue } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -210,13 +210,12 @@ function getHoverTransform(index: number, hoveredIndex: number | null) {
   return { y: 0, scale: 1, zIndex: index };
 }
 
-const GalleryCarousel = ({
-  images,
-  variant = 'modal',
-}: {
+type GalleryCarouselProps = {
   images: Array<{src: string; caption: string}>;
   variant?: 'modal' | 'default';
-}) => {
+};
+
+const GalleryCarousel = ({ images, variant = 'modal' }: GalleryCarouselProps) => {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -302,18 +301,81 @@ const GalleryCarousel = ({
   );
 };
 
+const MinimapTick = React.memo(({
+  pos,
+  type,
+  minimapWidthRef,
+  scrollProgressMV,
+  minimapMouseXMV,
+  pointerRadius,
+  indicatorRadius,
+}: {
+  pos: number;
+  type: 'major' | 'minor';
+  minimapWidthRef: React.RefObject<number | null>;
+  scrollProgressMV: MotionValue<number>;
+  minimapMouseXMV: MotionValue<number>;
+  pointerRadius: number;
+  indicatorRadius: number;
+}) => {
+  const baseHeight = type === 'major' ? 16 : 8;
+  const maxHeight = type === 'major' ? 28 : 14;
+
+  const scaleY = useTransform(
+    [scrollProgressMV, minimapMouseXMV],
+    ([scrollProg, mouseX]: number[]) => {
+      const width = minimapWidthRef.current ?? 0;
+      if (width === 0) return 1;
+      const tickX = pos * width;
+      const indicatorX = scrollProg * width;
+      const pointerDistance = mouseX < 0 ? Infinity : Math.abs(mouseX - tickX);
+      const indicatorDistance = Math.abs(indicatorX - tickX);
+      const influence = Math.max(
+        0,
+        Math.max(1 - pointerDistance / pointerRadius, 1 - indicatorDistance / indicatorRadius)
+      );
+      return 1 + influence * ((maxHeight / baseHeight) - 1);
+    }
+  );
+
+  const smoothScaleY = useSpring(scaleY, { stiffness: 300, damping: 25 });
+
+  return (
+    <motion.div
+      className="w-[1px] origin-bottom"
+      style={{
+        height: baseHeight,
+        scaleY: smoothScaleY,
+        backgroundColor: 'var(--text-muted)',
+        opacity: type === 'major' ? 0.9 : 0.6,
+      }}
+    />
+  );
+});
+MinimapTick.displayName = 'MinimapTick';
+
+const ScrollPercent = ({ progress }: { progress: MotionValue<number> }) => {
+  const display = useTransform(progress, v => `${Math.round(v * 100)}%`);
+  return <motion.span className="opacity-60">{display}</motion.span>;
+};
+
 export default function YearInReview() {
   const MONTH_COUNT = YEAR_DATA.length;
   const MINOR_PER_INTERVAL = 4; // ticks between major month stops
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [minimapMouseX, setMinimapMouseX] = useState<number | null>(null);
-  const [minimapWidth, setMinimapWidth] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const scrollProgressMV = useMotionValue(0);
+  const smoothScrollProgress = useSpring(scrollProgressMV, { stiffness: 500, damping: 40 });
+  const minimapMouseXMV = useMotionValue(-1);
+  const minimapWidthRef = useRef(0);
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const minimapRef = useRef<HTMLDivElement>(null);
+
+  const pointerRadius = isMobile ? 80 : 140;
+  const indicatorRadius = isMobile ? 100 : 180;
 
   const closeModal = useCallback(() => setSelectedId(null), []);
 
@@ -321,8 +383,8 @@ export default function YearInReview() {
     if (!scrollRef.current) return;
     const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
     const maxScroll = Math.max(1, scrollWidth - clientWidth);
-    setScrollProgress(Math.min(1, Math.max(0, scrollLeft / maxScroll)));
-  }, []);
+    scrollProgressMV.set(Math.min(1, Math.max(0, scrollLeft / maxScroll)));
+  }, [scrollProgressMV]);
 
   useEffect(() => {
     handleScroll();
@@ -333,12 +395,20 @@ export default function YearInReview() {
   useEffect(() => {
     const updateMinimapWidth = () => {
       if (minimapRef.current) {
-        setMinimapWidth(minimapRef.current.clientWidth);
+        minimapWidthRef.current = minimapRef.current.clientWidth;
       }
     };
     updateMinimapWidth();
     window.addEventListener('resize', updateMinimapWidth);
     return () => window.removeEventListener('resize', updateMinimapWidth);
+  }, []);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)');
+    setIsMobile(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
   }, []);
 
   const tickPositions = React.useMemo(() => {
@@ -355,24 +425,7 @@ export default function YearInReview() {
     return ticks;
   }, [MONTH_COUNT]);
 
-  const getTickHeight = useCallback((pos: number, type: 'major' | 'minor') => {
-    const baseHeight = type === 'major' ? 16 : 8;
-    if (minimapWidth === 0) return baseHeight;
-    const tickX = pos * minimapWidth;
-    const indicatorX = scrollProgress * minimapWidth;
-    const pointerDistance = minimapMouseX === null ? Infinity : Math.abs(minimapMouseX - tickX);
-    const indicatorDistance = Math.abs(indicatorX - tickX);
-    const influence = Math.max(
-      0,
-      Math.max(1 - pointerDistance / 140, 1 - indicatorDistance / 180)
-    );
-    const boost = type === 'major' ? 12 : 6;
-    return baseHeight + influence * boost;
-  }, [minimapMouseX, minimapWidth, scrollProgress]);
-
-  const getTickOpacity = useCallback((type: 'major' | 'minor') => {
-    return type === 'major' ? 0.9 : 0.6;
-  }, []);
+  const indicatorLeft = useTransform(smoothScrollProgress, v => `${v * 100}%`);
 
   useEffect(() => {
     if (selectedId) {
@@ -447,10 +500,11 @@ export default function YearInReview() {
               return (
                 <motion.div
                   key={month.id}
+                  layoutId={`card-${month.id}`}
                   className="flex-shrink-0 w-[75vw] md:w-[200px] lg:w-[220px]"
                   animate={{ y: transform.y, scale: transform.scale }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  style={{ zIndex: transform.zIndex }}
+                  style={{ zIndex: transform.zIndex, opacity: selectedId === month.id ? 0 : 1 }}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
                   onClick={() => setSelectedId(month.id)}
@@ -487,8 +541,8 @@ export default function YearInReview() {
         </div>
         <div className="mx-auto max-w-3xl px-6 md:px-12">
           <div className="mt-3 flex items-center justify-between text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
-            <span>Scroll to explore</span>
-            <span className="opacity-60">{Math.round(scrollProgress * 100)}%</span>
+            <span>{isMobile ? 'Swipe to explore' : 'Scroll to explore'}</span>
+            <ScrollPercent progress={scrollProgressMV} />
           </div>
           <div
             ref={minimapRef}
@@ -497,13 +551,12 @@ export default function YearInReview() {
             aria-label="Scroll position"
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuenow={Math.round(scrollProgress * 100)}
             onPointerMove={(event) => {
               if (!minimapRef.current) return;
               const rect = minimapRef.current.getBoundingClientRect();
-              setMinimapMouseX(event.clientX - rect.left);
+              minimapMouseXMV.set(event.clientX - rect.left);
             }}
-            onPointerLeave={() => setMinimapMouseX(null)}
+            onPointerLeave={() => minimapMouseXMV.set(-1)}
             onClick={(event) => {
               if (!scrollRef.current) return;
               const rect = event.currentTarget.getBoundingClientRect();
@@ -515,20 +568,21 @@ export default function YearInReview() {
             <div className="absolute inset-x-0 bottom-1 h-[2px] bg-[var(--border-subtle)] rounded-full" />
             <div className="absolute inset-x-0 bottom-1 flex items-end justify-between pointer-events-none">
               {tickPositions.map((tick, index) => (
-                <div
+                <MinimapTick
                   key={`tick-${index}`}
-                  className="w-[1px] transition-[height] duration-150 ease-out"
-                  style={{
-                    height: getTickHeight(tick.pos, tick.type),
-                    backgroundColor: 'var(--text-muted)',
-                    opacity: getTickOpacity(tick.type),
-                  }}
+                  pos={tick.pos}
+                  type={tick.type}
+                  minimapWidthRef={minimapWidthRef}
+                  scrollProgressMV={scrollProgressMV}
+                  minimapMouseXMV={minimapMouseXMV}
+                  pointerRadius={pointerRadius}
+                  indicatorRadius={indicatorRadius}
                 />
               ))}
             </div>
-            <div
+            <motion.div
               className="absolute bottom-1 h-[14px] w-[1px] bg-[var(--text-muted)]"
-              style={{ left: `${scrollProgress * 100}%` }}
+              style={{ left: indicatorLeft }}
             />
           </div>
         </div>
@@ -548,10 +602,8 @@ export default function YearInReview() {
             />
 
             <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 40 }}
-              transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+              layoutId={`card-${selectedId}`}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
               role="dialog"
               aria-modal="true"
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
@@ -579,7 +631,7 @@ export default function YearInReview() {
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.25, ease: 'easeOut' }}
+                  transition={{ delay: 0.2, duration: 0.25, ease: 'easeOut' }}
                   className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-5"
                 >
                   {selectedMonth.description}
@@ -588,7 +640,7 @@ export default function YearInReview() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.15, duration: 0.3, ease: 'easeOut' }}
+                  transition={{ delay: 0.25, duration: 0.3, ease: 'easeOut' }}
                 >
                   <GalleryCarousel images={selectedMonth.gallery} variant="modal" />
                 </motion.div>
