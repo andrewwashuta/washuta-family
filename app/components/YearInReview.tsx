@@ -280,18 +280,18 @@ const GalleryCarousel = ({ images, variant = 'modal' }: GalleryCarouselProps) =>
         </AnimatePresence>
 
         {images.length > 1 && (
-          <div className="absolute inset-0 flex items-center justify-between px-3 md:opacity-0 md:group-hover:opacity-100 transition-opacity pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-between px-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity pointer-events-none">
             <button
               onClick={prev}
               aria-label="Previous image"
-              className="p-2 rounded-full bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all pointer-events-auto"
+              className="p-1.5 rounded-lg bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all pointer-events-auto"
             >
               <ChevronLeft size={18} />
             </button>
             <button
               onClick={next}
               aria-label="Next image"
-              className="p-2 rounded-full bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all pointer-events-auto"
+              className="p-1.5 rounded-lg bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all pointer-events-auto"
             >
               <ChevronRight size={18} />
             </button>
@@ -484,11 +484,12 @@ export default function YearInReview() {
                 <motion.div
                   key={month.id}
                   layoutId={`card-${month.id}`}
-                  className="flex-shrink-0 w-[75vw] md:w-[220px] lg:w-[248px] rounded-xl"
+                  className="flex-shrink-0 w-[75vw] md:w-[232px] lg:w-[260px] rounded-xl"
                   animate={{ y: transform.y, scale: transform.scale, boxShadow: shadowCard }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   style={{ zIndex: transform.zIndex, opacity: selectedId === month.id ? 0 : 1 }}
                   onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseMove={() => { if (hoveredIndex !== index && !selectedId) setHoveredIndex(index); }}
                   onMouseLeave={() => setHoveredIndex(null)}
                   onClick={() => { if (!wasDragged.current) setSelectedId(month.id); }}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
@@ -526,26 +527,24 @@ export default function YearInReview() {
             <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
               {isMobile ? 'Swipe to explore' : 'Scroll to explore'}
             </span>
-            {!isMobile && (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => scrollByCard('left')}
-                  disabled={!canScrollLeft}
-                  aria-label="Scroll left"
-                  className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button
-                  onClick={() => scrollByCard('right')}
-                  disabled={!canScrollRight}
-                  aria-label="Scroll right"
-                  className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            )}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => scrollByCard('left')}
+                disabled={!canScrollLeft}
+                aria-label="Scroll left"
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => scrollByCard('right')}
+                disabled={!canScrollRight}
+                aria-label="Scroll right"
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -570,37 +569,37 @@ export default function YearInReview() {
               role="dialog"
               aria-modal="true"
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
-              className="relative w-full max-w-2xl md:max-w-[760px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
+              className="relative w-full max-w-lg md:max-w-[560px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
-              {/* Fixed header */}
-              <div className="flex items-center justify-between px-6 md:px-8 pt-5 pb-3 border-b border-[var(--border-subtle)]">
-                <div className="flex items-baseline gap-3 min-w-0">
+              {/* Header — matches card style */}
+              <div className="flex items-center justify-between px-5 md:px-6 h-[44px] select-none">
+                <div className="flex items-center justify-between flex-1 min-w-0">
                   <span className="text-[14px] text-[var(--text-primary)] truncate">{selectedMonth.title}</span>
-                  <span className="text-[13px] text-[var(--text-muted)] font-sans whitespace-nowrap">{selectedMonth.month} {selectedMonth.year}</span>
+                  <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0 ml-3">{selectedMonth.month} {selectedMonth.year}</span>
                 </div>
                 <button
                   ref={closeButtonRef}
                   onClick={(e) => { e.stopPropagation(); closeModal(); }}
                   aria-label="Close"
-                  className="ml-4 flex-shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+                  className="ml-3 flex-shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
                 >
                   <X size={16} />
                 </button>
               </div>
 
               {/* Scrollable content */}
-              <div className="flex-1 overflow-y-auto px-6 md:px-8 py-5">
+              <div className="flex-1 overflow-y-auto px-5 md:px-6 pb-5">
+                {selectedMonth.description && (
+                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-4">
+                    {selectedMonth.description}
+                  </p>
+                )}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.3, ease: 'easeOut' }}
+                  transition={{ delay: 0.15, duration: 0.3, ease: 'easeOut' }}
                 >
                   <GalleryCarousel images={selectedMonth.gallery} variant="modal" />
-                  {selectedMonth.description && (
-                    <p className="mt-4 text-[12px] text-[var(--text-muted)] leading-relaxed italic">
-                      {selectedMonth.description}
-                    </p>
-                  )}
                 </motion.div>
               </div>
 
