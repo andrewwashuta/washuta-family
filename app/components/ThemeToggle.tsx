@@ -1,17 +1,17 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { CentralIcon } from "@central-icons-react/all";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CYCLE = ["system", "light", "dark"] as const;
 
-const icons = {
-  system: Monitor,
-  light: Sun,
-  dark: Moon,
-};
+const iconNames = {
+  system: "IconTelevision",
+  light: "IconSun",
+  dark: "IconMoon",
+} as const;
 
 const labels = {
   system: "System",
@@ -34,7 +34,6 @@ export function ThemeToggle() {
   const current = (theme as typeof CYCLE[number]) || "system";
   const nextIndex = (CYCLE.indexOf(current) + 1) % CYCLE.length;
   const next = CYCLE[nextIndex];
-  const Icon = icons[current];
 
   return (
     <motion.button
@@ -52,7 +51,7 @@ export function ThemeToggle() {
           transition={{ duration: 0.15, ease: "easeOut" }}
           className="absolute"
         >
-          <Icon size={16} strokeWidth={1.5} />
+          <CentralIcon name={iconNames[current]} join="round" fill="outlined" radius="3" stroke="1.5" size={16} />
         </motion.span>
       </AnimatePresence>
     </motion.button>

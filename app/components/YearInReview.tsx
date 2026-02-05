@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Expand } from 'lucide-react';
+import { CentralIcon } from '@central-icons-react/all';
 import { useTheme } from 'next-themes';
 import { ThemeToggle } from './ThemeToggle';
 
 const SHADOW_CARD_LIGHT = '0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02)';
 const SHADOW_CARD_DARK = '0 1px 2px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.15)';
+const SHADOW_CARD_HOVER_LIGHT = '0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04)';
+const SHADOW_CARD_HOVER_DARK = '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)';
 const SHADOW_MODAL_LIGHT = '0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)';
 const SHADOW_MODAL_DARK = '0 8px 30px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25)';
 
@@ -206,14 +208,14 @@ const YEAR_DATA = [
   },
 ];
 
-function getHoverTransform(index: number, hoveredIndex: number | null) {
+function getHoverTransform(index: number, hoveredIndex: number | null, shadowCard: string, shadowCardHover: string) {
   if (hoveredIndex === null) {
-    return { y: 0, scale: 1, zIndex: index };
+    return { y: 0, scale: 1, zIndex: index, boxShadow: shadowCard };
   }
   if (index === hoveredIndex) {
-    return { y: -6, scale: 1.02, zIndex: 50 };
+    return { y: -6, scale: 1.02, zIndex: 50, boxShadow: shadowCardHover };
   }
-  return { y: 0, scale: 1, zIndex: index };
+  return { y: 0, scale: 1, zIndex: index, boxShadow: shadowCard };
 }
 
 type GalleryCarouselProps = {
@@ -285,13 +287,13 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
             aria-label="Expand image"
             className="absolute top-2 right-2 p-1 rounded-md bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
           >
-            <Expand size={14} strokeWidth={2} />
+            <CentralIcon name="IconExpandSimple" join="round" fill="outlined" radius="3" stroke="2" size={14} />
           </button>
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-2 font-sans" aria-live="polite">
-        <span className="flex-1 min-w-0 text-[13px] text-[var(--text-muted)] truncate">{images[index].caption}</span>
+      <div className="mt-3 flex items-center gap-2 font-sans text-left" aria-live="polite">
+        <span className="flex-1 min-w-0 text-[13px] text-[var(--text-muted)] truncate text-left">{images[index].caption}</span>
         <div className="flex-shrink-0 flex items-center gap-1">
           <span className="text-[13px] text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
           {images.length > 1 && (
@@ -301,14 +303,14 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
                 aria-label="Previous image"
                 className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
               >
-                <ChevronLeft size={18} />
+                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={18} />
               </button>
               <button
                 onClick={next}
                 aria-label="Next image"
                 className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
               >
-                <ChevronRight size={18} />
+                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={18} />
               </button>
             </>
           )}
@@ -323,6 +325,7 @@ export default function YearInReview() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const shadowCard = isDark ? SHADOW_CARD_DARK : SHADOW_CARD_LIGHT;
+  const shadowCardHover = isDark ? SHADOW_CARD_HOVER_DARK : SHADOW_CARD_HOVER_LIGHT;
   const shadowModal = isDark ? SHADOW_MODAL_DARK : SHADOW_MODAL_LIGHT;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -408,6 +411,27 @@ export default function YearInReview() {
     mql.addEventListener('change', handler);
     return () => mql.removeEventListener('change', handler);
   }, []);
+
+  // #region agent log
+  useEffect(() => {
+    const log = () => {
+      const header = document.querySelector('[data-debug="header-month"]');
+      const scroll = document.querySelector('[data-debug="card-scroll"]');
+      const firstCard = scroll?.querySelector('[data-card-index="0"]');
+      const headerRect = header?.getBoundingClientRect();
+      const cardRect = firstCard?.getBoundingClientRect();
+      const headerStyle = header ? getComputedStyle(header as HTMLElement) : null;
+      const scrollStyle = scroll ? getComputedStyle(scroll as HTMLElement) : null;
+      const headerPadL = headerStyle ? parseFloat(headerStyle.paddingLeft) : 0;
+      const textStart = headerRect ? headerRect.left + headerPadL : null;
+      const alignmentDiff = textStart != null && cardRect ? cardRect.left - textStart : null;
+      fetch('http://127.0.0.1:7242/ingest/245655c4-d588-439c-b7aa-d76fd16856e9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'YearInReview.tsx:alignment',message:'layout debug',data:{innerWidth:window.innerWidth,clientWidth:document.documentElement.clientWidth,scrollbarWidth:window.innerWidth-document.documentElement.clientWidth,mdBreakpoint:window.innerWidth>=768,headerLeft:headerRect?.left,headerPaddingLeft:headerPadL,textStart,cardLeft:cardRect?.left,scrollPaddingLeft:scrollStyle?.paddingLeft,alignmentDiff},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'H1'})}).catch(()=>{});
+    };
+    const t = setTimeout(log, 500);
+    window.addEventListener('resize', log);
+    return () => { clearTimeout(t); window.removeEventListener('resize', log); };
+  }, []);
+  // #endregion
 
   useEffect(() => {
     const handleWindowScroll = () => setHasScrolled(window.scrollY > 10);
@@ -511,7 +535,7 @@ export default function YearInReview() {
       </header>
 
       <main className="pb-20">
-        <div className="mx-auto max-w-3xl px-6 md:px-12">
+        <div data-debug="header-month" className="mx-auto max-w-3xl px-6 md:px-12">
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -524,6 +548,7 @@ export default function YearInReview() {
         <div className="overflow-visible">
           <div
             ref={scrollRef}
+            data-debug="card-scroll"
             onScroll={handleScroll}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -535,14 +560,14 @@ export default function YearInReview() {
             aria-label="Monthly photo cards"
           >
             {YEAR_DATA.map((month, index) => {
-              const transform = getHoverTransform(index, hoveredIndex);
+              const transform = getHoverTransform(index, hoveredIndex, shadowCard, shadowCardHover);
               return (
                 <motion.div
                   key={month.id}
                   layoutId={`card-${month.id}`}
                   data-card-index={index}
                   className="flex-shrink-0 w-[75vw] md:w-[232px] lg:w-[260px] rounded-xl"
-                  animate={{ y: transform.y, scale: transform.scale, boxShadow: shadowCard }}
+                  animate={{ y: transform.y, scale: transform.scale, boxShadow: transform.boxShadow }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   style={{ zIndex: transform.zIndex, opacity: selectedId === month.id ? 0 : 1 }}
                   onMouseEnter={() => setHoveredIndex(index)}
@@ -591,7 +616,7 @@ export default function YearInReview() {
                 aria-label="Scroll left"
                 className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
               >
-                <ChevronLeft size={16} />
+                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={16} />
               </button>
               <button
                 onClick={() => scrollByCard('right')}
@@ -599,7 +624,7 @@ export default function YearInReview() {
                 aria-label="Scroll right"
                 className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
               >
-                <ChevronRight size={16} />
+                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={16} />
               </button>
             </div>
           </div>
@@ -659,20 +684,20 @@ export default function YearInReview() {
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
               className="relative w-full max-w-lg md:max-w-[720px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
-              {/* Header — title (serif), month badge (sans), close */}
-              <div className="flex items-center justify-between px-5 md:px-6 h-[44px] select-none">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <span className="text-[14px] text-[var(--text-primary)] truncate">{selectedMonth.title}</span>
-                  <span className="flex-shrink-0 px-2.5 py-1 rounded-full text-[11px] font-sans text-[var(--text-muted)] bg-[var(--image-bg)] border border-[var(--border-subtle)]">{selectedMonth.month}</span>
+              {/* Header — matches card: title left, month right, more padding up top, X */}
+              <div className="flex items-center justify-between px-5 md:px-6 pt-8 pb-4 select-none">
+                <span className="flex-1 min-w-0 text-[14px] text-[var(--text-primary)] truncate pr-3">{selectedMonth.title}</span>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className="text-[13px] text-[var(--text-muted)] font-sans">{selectedMonth.month}</span>
+                  <button
+                    ref={closeButtonRef}
+                    onClick={(e) => { e.stopPropagation(); closeModal(); }}
+                    aria-label="Close"
+                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+                  >
+                    <CentralIcon name="IconCrossMedium" join="round" fill="outlined" radius="3" stroke="2" size={16} />
+                  </button>
                 </div>
-                <button
-                  ref={closeButtonRef}
-                  onClick={(e) => { e.stopPropagation(); closeModal(); }}
-                  aria-label="Close"
-                  className="ml-3 flex-shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
-                >
-                  <X size={16} />
-                </button>
               </div>
 
               {/* Scrollable content */}
