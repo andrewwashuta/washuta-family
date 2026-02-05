@@ -214,6 +214,10 @@ const GalleryCarousel = ({
   images,
 }: {
   images: Array<{src: string; caption: string}>;
+  variant = 'modal',
+}: {
+  images: Array<{src: string; caption: string}>;
+  variant?: 'modal' | 'default';
 }) => {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
@@ -246,6 +250,10 @@ const GalleryCarousel = ({
   };
 
   const frameClassName = 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden group bg-[var(--image-bg)] rounded-xl';
+  const frameClassName =
+    variant === 'modal'
+      ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden group bg-[var(--image-bg)] rounded-xl'
+      : 'relative w-full aspect-[4/5] overflow-hidden group bg-[var(--image-bg)]';
 
   return (
     <div className="w-full">
@@ -638,7 +646,7 @@ export default function YearInReview() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.25, duration: 0.3, ease: 'easeOut' }}
                 >
-                  <GalleryCarousel images={selectedMonth.gallery} />
+                  <GalleryCarousel images={selectedMonth.gallery} variant="modal" />
                 </motion.div>
               </div>
 
