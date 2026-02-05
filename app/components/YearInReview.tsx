@@ -210,15 +210,12 @@ function getHoverTransform(index: number, hoveredIndex: number | null) {
   return { y: 0, scale: 1, zIndex: index };
 }
 
-const GalleryCarousel = ({
-  images,
-}: {
-  images: Array<{src: string; caption: string}>;
-  variant = 'modal',
-}: {
+type GalleryCarouselProps = {
   images: Array<{src: string; caption: string}>;
   variant?: 'modal' | 'default';
-}) => {
+};
+
+const GalleryCarousel = ({ images, variant = 'modal' }: GalleryCarouselProps) => {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -249,7 +246,6 @@ const GalleryCarousel = ({
     exit: (dir: number) => ({ x: dir > 0 ? -100 : 100, opacity: 0 }),
   };
 
-  const frameClassName = 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden group bg-[var(--image-bg)] rounded-xl';
   const frameClassName =
     variant === 'modal'
       ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden group bg-[var(--image-bg)] rounded-xl'
