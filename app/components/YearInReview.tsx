@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Expand } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -255,7 +255,7 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
 
   const frameClassName =
     variant === 'modal'
-      ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden bg-[var(--image-bg)] rounded-xl'
+      ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden bg-[var(--image-bg)] rounded-xl group'
       : 'relative w-full aspect-[4/5] overflow-hidden bg-[var(--image-bg)]';
 
   return (
@@ -283,41 +283,36 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
           <button
             onClick={(e) => { e.stopPropagation(); onExpandImage(images[index].src); }}
             aria-label="Expand image"
-            className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all"
+            className="absolute top-2 right-2 p-1 rounded-md bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
           >
-            <Maximize2 size={18} />
+            <Expand size={14} strokeWidth={2} />
           </button>
         )}
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-2 font-sans" aria-live="polite">
-        {images.length > 1 ? (
-          <>
-            <button
-              onClick={prev}
-              aria-label="Previous image"
-              className="flex-shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <div className="flex-1 min-w-0 flex items-baseline justify-center gap-2">
-              <span className="text-[13px] text-[var(--text-muted)] truncate">{images[index].caption}</span>
-              <span className="flex-shrink-0 text-[13px] text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
-            </div>
-            <button
-              onClick={next}
-              aria-label="Next image"
-              className="flex-shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </>
-        ) : (
-          <>
-            <span className="flex-1 min-w-0 text-[13px] text-[var(--text-muted)] truncate">{images[index].caption}</span>
-            <span className="flex-shrink-0 text-[13px] text-[var(--text-muted)] opacity-60">1/1</span>
-          </>
-        )}
+      <div className="mt-3 flex items-center gap-2 font-sans" aria-live="polite">
+        <span className="flex-1 min-w-0 text-[13px] text-[var(--text-muted)] truncate">{images[index].caption}</span>
+        <div className="flex-shrink-0 flex items-center gap-1">
+          <span className="text-[13px] text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prev}
+                aria-label="Previous image"
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                onClick={next}
+                aria-label="Next image"
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -359,12 +354,23 @@ export default function YearInReview() {
   }, []);
 
   const scrollByCard = useCallback((direction: 'left' | 'right') => {
-    if (!scrollRef.current) return;
-    const firstCard = scrollRef.current.querySelector(':scope > div') as HTMLElement | null;
-    const cardWidth = firstCard?.clientWidth ?? 220;
-    const gap = 12;
-    const scrollAmount = (cardWidth + gap) * (direction === 'right' ? 1 : -1);
-    scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    const container = scrollRef.current;
+    if (!container) return;
+    const cards = container.querySelectorAll('[data-card-index]');
+    if (cards.length === 0) return;
+    const first = cards[0] as HTMLElement;
+    const second = cards[1] as HTMLElement;
+    const cardWidth = first.offsetWidth;
+    const gap = second ? second.offsetLeft - first.offsetLeft - first.offsetWidth : 12;
+    const step = cardWidth + gap;
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    const maxScroll = Math.max(0, scrollWidth - clientWidth);
+    const currentIndex = Math.round(scrollLeft / step);
+    const targetIndex = direction === 'right'
+      ? Math.min(currentIndex + 1, cards.length - 1)
+      : Math.max(currentIndex - 1, 0);
+    const targetScroll = Math.min(targetIndex * step, maxScroll);
+    container.scrollTo({ left: targetScroll, behavior: 'smooth' });
   }, []);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -598,6 +604,11 @@ export default function YearInReview() {
             </div>
           </div>
         </div>
+
+        {/* Footer — main view */}
+        <div className="mx-auto max-w-3xl px-6 md:px-12 pt-16 pb-8">
+          <span className="text-[11px] font-sans text-[var(--text-muted)]">Made with love in New Mexico</span>
+        </div>
       </main>
 
       {/* Fullscreen expanded image overlay */}
@@ -678,11 +689,6 @@ export default function YearInReview() {
                 >
                   <GalleryCarousel images={selectedMonth.gallery} variant="modal" onExpandImage={(url) => setExpandedImageUrl(url)} />
                 </motion.div>
-              </div>
-
-              {/* Footer */}
-              <div className="flex-shrink-0 px-5 md:px-6 py-4 border-t border-[var(--border-subtle)]">
-                <span className="text-[11px] font-sans text-[var(--text-muted)]">Made with love in New Mexico</span>
               </div>
 
             </motion.div>
