@@ -43,6 +43,7 @@
   /* Shadow system — layered for depth */
   --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02);
   --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-card-stack: 0 1px 2px rgba(0,0,0,0.03);
   --shadow-modal: 0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
 }
 
@@ -63,6 +64,7 @@
   /* Shadow system — dark mode */
   --shadow-card: 0 1px 2px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.15);
   --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+  --shadow-card-stack: 0 1px 2px rgba(0,0,0,0.12);
   --shadow-modal: 0 8px 30px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25);
 }
 
@@ -76,4 +78,27 @@ body {
 
 .font-sans {
   font-family: var(--font-grotesk);
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.content-gutter-left {
+  padding-left: max(1.5rem, calc((100vw - 48rem) / 2 + 1.5rem));
+}
+.content-gutter-right {
+  padding-right: max(1.5rem, calc((100vw - 48rem) / 2 + 1.5rem));
+}
+@media (min-width: 768px) {
+  .content-gutter-left {
+    padding-left: max(3rem, calc((100vw - 48rem) / 2 + 3rem));
+  }
+  .content-gutter-right {
+    padding-right: max(3rem, calc((100vw - 48rem) / 2 + 3rem));
+  }
 }

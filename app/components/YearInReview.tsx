@@ -200,7 +200,23 @@ const YEAR_DATA = [
   },
 ];
 
-const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: string}> }) => {
+function getHoverTransform(index: number, hoveredIndex: number | null) {
+  if (hoveredIndex === null) {
+    return { y: 0, scale: 1, zIndex: index };
+  }
+  if (index === hoveredIndex) {
+    return { y: -6, scale: 1.02, zIndex: 50 };
+  }
+  return { y: 0, scale: 1, zIndex: index };
+}
+
+const GalleryCarousel = ({
+  images,
+  variant = 'modal',
+}: {
+  images: Array<{src: string; caption: string}>;
+  variant?: 'modal' | 'default';
+}) => {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -231,45 +247,52 @@ const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: stri
     exit: (dir: number) => ({ x: dir > 0 ? -100 : 100, opacity: 0 }),
   };
 
-  return (
-    <div className="relative w-full aspect-[4/5] overflow-hidden group bg-[var(--image-bg)]">
-      <AnimatePresence mode='wait' custom={direction}>
-        <motion.img
-          key={index}
-          custom={direction}
-          variants={variants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ duration: 0.2 }}
-          src={images[index].src}
-          alt={images[index].caption}
-          className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.2}
-          onDragEnd={handleDragEnd}
-        />
-      </AnimatePresence>
+  const frameClassName =
+    variant === 'modal'
+      ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden group bg-[var(--image-bg)] rounded-xl'
+      : 'relative w-full aspect-[4/5] overflow-hidden group bg-[var(--image-bg)]';
 
-      {images.length > 1 && (
-        <div className="absolute inset-0 flex items-center justify-between px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          <button
-            onClick={prev}
-            aria-label="Previous image"
-            className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <button
-            onClick={next}
-            aria-label="Next image"
-            className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
+  return (
+    <div className="w-full">
+      <div className={frameClassName}>
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.img
+            key={index}
+            custom={direction}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+            src={images[index].src}
+            alt={images[index].caption}
+            className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.2}
+            onDragEnd={handleDragEnd}
+          />
+        </AnimatePresence>
+
+        {images.length > 1 && (
+          <div className="absolute inset-0 flex items-center justify-between px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <button
+              onClick={prev}
+              aria-label="Previous image"
+              className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={next}
+              aria-label="Next image"
+              className="p-2 text-white/60 hover:text-white transition-colors pointer-events-auto"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="mt-3 flex items-baseline justify-between font-sans" aria-live="polite">
         <span className="text-[13px] text-[var(--text-muted)]">{images[index].caption}</span>
@@ -280,11 +303,76 @@ const GalleryCarousel = ({ images }: { images: Array<{src: string; caption: stri
 };
 
 export default function YearInReview() {
+  const MONTH_COUNT = YEAR_DATA.length;
+  const MINOR_PER_INTERVAL = 4; // ticks between major month stops
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [minimapMouseX, setMinimapMouseX] = useState<number | null>(null);
+  const [minimapWidth, setMinimapWidth] = useState(0);
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const minimapRef = useRef<HTMLDivElement>(null);
 
   const closeModal = useCallback(() => setSelectedId(null), []);
+
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    const maxScroll = Math.max(1, scrollWidth - clientWidth);
+    setScrollProgress(Math.min(1, Math.max(0, scrollLeft / maxScroll)));
+  }, []);
+
+  useEffect(() => {
+    handleScroll();
+    window.addEventListener('resize', handleScroll);
+    return () => window.removeEventListener('resize', handleScroll);
+  }, [handleScroll]);
+
+  useEffect(() => {
+    const updateMinimapWidth = () => {
+      if (minimapRef.current) {
+        setMinimapWidth(minimapRef.current.clientWidth);
+      }
+    };
+    updateMinimapWidth();
+    window.addEventListener('resize', updateMinimapWidth);
+    return () => window.removeEventListener('resize', updateMinimapWidth);
+  }, []);
+
+  const tickPositions = React.useMemo(() => {
+    const ticks: Array<{ pos: number; type: 'major' | 'minor' }> = [];
+    for (let m = 0; m < MONTH_COUNT; m++) {
+      ticks.push({ pos: m / Math.max(1, MONTH_COUNT - 1), type: 'major' });
+      if (m < MONTH_COUNT - 1) {
+        for (let k = 1; k <= MINOR_PER_INTERVAL; k++) {
+          const pos = (m + k / (MINOR_PER_INTERVAL + 1)) / Math.max(1, MONTH_COUNT - 1);
+          ticks.push({ pos, type: 'minor' });
+        }
+      }
+    }
+    return ticks;
+  }, [MONTH_COUNT]);
+
+  const getTickHeight = useCallback((pos: number, type: 'major' | 'minor') => {
+    const baseHeight = type === 'major' ? 16 : 8;
+    if (minimapWidth === 0) return baseHeight;
+    const tickX = pos * minimapWidth;
+    const indicatorX = scrollProgress * minimapWidth;
+    const pointerDistance = minimapMouseX === null ? Infinity : Math.abs(minimapMouseX - tickX);
+    const indicatorDistance = Math.abs(indicatorX - tickX);
+    const influence = Math.max(
+      0,
+      Math.max(1 - pointerDistance / 140, 1 - indicatorDistance / 180)
+    );
+    const boost = type === 'major' ? 12 : 6;
+    return baseHeight + influence * boost;
+  }, [minimapMouseX, minimapWidth, scrollProgress]);
+
+  const getTickOpacity = useCallback((type: 'major' | 'minor') => {
+    return type === 'major' ? 0.9 : 0.6;
+  }, []);
 
   useEffect(() => {
     if (selectedId) {
@@ -306,77 +394,143 @@ export default function YearInReview() {
         <ThemeToggle />
       </div>
 
-      <header className="relative pt-20 pb-14 px-6 md:px-12 max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
-        >
-          <div className="flex items-baseline justify-between mb-1">
-            <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
-              Washuta Family
-            </span>
-            <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
-              2025
-            </span>
-          </div>
-        </motion.div>
+      <header className="relative pt-20 pb-14">
+        <div className="mx-auto max-w-3xl px-6 md:px-12">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
+            <div className="flex items-baseline justify-between mb-1">
+              <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
+                Washuta Family
+              </span>
+              <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
+                2025
+              </span>
+            </div>
+          </motion.div>
 
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-          className="text-[16px] md:text-[18px] leading-[1.5] tracking-[-0.02em] text-[var(--text-secondary)] mt-6 max-w-md"
-        >
-          A collection of our favorite frames from the year — snowy mornings, summer road trips, and the quiet moments in between.
-        </motion.p>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+            className="text-[16px] md:text-[18px] leading-[1.5] tracking-[-0.02em] text-[var(--text-secondary)] mt-6 max-w-md"
+          >
+            A collection of our favorite frames from the year — snowy mornings, summer road trips, and the quiet moments in between.
+          </motion.p>
+        </div>
       </header>
 
-      <main className="px-6 md:px-12 pb-20 max-w-6xl mx-auto">
-        <motion.span
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="inline-block text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans mb-6"
-        >
-          Month by month
-        </motion.span>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {YEAR_DATA.map((month) => (
-            <motion.div
-              key={month.id}
-              onClick={() => setSelectedId(month.id)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
-              role="button"
-              tabIndex={0}
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              style={{ boxShadow: 'var(--shadow-card)' }}
-              whileHover={{
-                y: -2,
-                boxShadow: 'var(--shadow-card-hover)',
-                transition: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] },
-              }}
-              className="relative group cursor-pointer p-2 rounded-xl border border-[var(--border-subtle)] transition-colors duration-300"
-            >
-              <div className="aspect-[4/5] overflow-hidden rounded-lg">
-                <img
-                  src={month.cover}
-                  alt={month.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+      <main className="pb-20">
+        <div className="mx-auto max-w-3xl px-6 md:px-12">
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="inline-block text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans mb-4"
+          >
+            Month by month
+          </motion.span>
+        </div>
+        <div className="overflow-visible">
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex overflow-x-auto overflow-y-visible scroll-smooth hide-scrollbar gap-4 md:gap-3 py-4 md:py-5 content-gutter-left content-gutter-right"
+            style={{ touchAction: 'pan-x' }}
+            role="region"
+            aria-label="Monthly photo cards"
+          >
+            {YEAR_DATA.map((month, index) => {
+              const transform = getHoverTransform(index, hoveredIndex);
+              return (
+                <motion.div
+                  key={month.id}
+                  className="flex-shrink-0 w-[75vw] md:w-[200px] lg:w-[220px]"
+                  animate={{ y: transform.y, scale: transform.scale }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  style={{ zIndex: transform.zIndex }}
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  onClick={() => setSelectedId(month.id)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${month.month} - ${month.title}`}
+                >
+                  <div
+                    className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden"
+                    style={{ boxShadow: 'var(--shadow-card)' }}
+                  >
+                    <div className="h-[44px] flex items-center justify-between px-4 select-none">
+                      <span className="text-[14px] text-[var(--text-primary)] truncate">{month.title}</span>
+                      <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0 ml-3">{month.month}</span>
+                    </div>
+                    <div className="px-3 pb-3">
+                      <div className="aspect-[4/5] overflow-hidden rounded-lg">
+                        <img
+                          src={month.cover}
+                          alt={month.title}
+                          className={`w-full h-full object-cover transition-all duration-300 ${
+                            hoveredIndex === index ? '' : 'grayscale'
+                          }`}
+                          draggable={false}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="mx-auto max-w-3xl px-6 md:px-12">
+          <div className="mt-3 flex items-center justify-between text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
+            <span>Scroll to explore</span>
+            <span className="opacity-60">{Math.round(scrollProgress * 100)}%</span>
+          </div>
+          <div
+            ref={minimapRef}
+            className="mt-4 relative h-9 flex items-end select-none"
+            role="progressbar"
+            aria-label="Scroll position"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(scrollProgress * 100)}
+            onPointerMove={(event) => {
+              if (!minimapRef.current) return;
+              const rect = minimapRef.current.getBoundingClientRect();
+              setMinimapMouseX(event.clientX - rect.left);
+            }}
+            onPointerLeave={() => setMinimapMouseX(null)}
+            onClick={(event) => {
+              if (!scrollRef.current) return;
+              const rect = event.currentTarget.getBoundingClientRect();
+              const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+              const maxScroll = scrollRef.current.scrollWidth - scrollRef.current.clientWidth;
+              scrollRef.current.scrollTo({ left: maxScroll * ratio, behavior: 'smooth' });
+            }}
+          >
+            <div className="absolute inset-x-0 bottom-1 h-[2px] bg-[var(--border-subtle)] rounded-full" />
+            <div className="absolute inset-x-0 bottom-1 flex items-end justify-between pointer-events-none">
+              {tickPositions.map((tick, index) => (
+                <div
+                  key={`tick-${index}`}
+                  className="w-[1px] transition-[height] duration-150 ease-out"
+                  style={{
+                    height: getTickHeight(tick.pos, tick.type),
+                    backgroundColor: 'var(--text-muted)',
+                    opacity: getTickOpacity(tick.type),
+                  }}
                 />
-              </div>
-
-              <div className="pt-3 px-1">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-[14px] text-[var(--text-primary)]">{month.title}</span>
-                  <span className="text-[13px] text-[var(--text-muted)] font-sans">{month.month}</span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              ))}
+            </div>
+            <div
+              className="absolute bottom-1 h-[14px] w-[1px] bg-[var(--text-muted)]"
+              style={{ left: `${scrollProgress * 100}%` }}
+            />
+          </div>
         </div>
       </main>
 
@@ -402,7 +556,7 @@ export default function YearInReview() {
               aria-modal="true"
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
               style={{ boxShadow: 'var(--shadow-modal)' }}
-              className="relative w-full max-w-3xl max-h-[88vh] md:max-h-[90vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
+              className="relative w-full max-w-2xl md:max-w-[760px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
               {/* Fixed header */}
               <div className="flex items-center justify-between px-6 md:px-8 pt-5 pb-3 border-b border-[var(--border-subtle)]">
@@ -436,7 +590,7 @@ export default function YearInReview() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.15, duration: 0.3, ease: 'easeOut' }}
                 >
-                  <GalleryCarousel images={selectedMonth.gallery} />
+                  <GalleryCarousel images={selectedMonth.gallery} variant="modal" />
                 </motion.div>
               </div>
 
