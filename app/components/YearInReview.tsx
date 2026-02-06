@@ -13,6 +13,11 @@ const SHADOW_CARD_HOVER_DARK = '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0
 const SHADOW_MODAL_LIGHT = '0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)';
 const SHADOW_MODAL_DARK = '0 8px 30px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25)';
 
+/** Shared icon button sizing — X, arrows, expand */
+const ICON_BUTTON_PADDING = 'p-1.5';
+const ICON_BUTTON_ROUNDED = 'rounded-lg';
+const ICON_BUTTON_SIZE = 18;
+
 const YEAR_DATA = [
   {
     id: 'january',
@@ -285,34 +290,34 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
           <button
             onClick={(e) => { e.stopPropagation(); onExpandImage(images[index].src); }}
             aria-label="Expand image"
-            className="absolute top-2 right-2 p-1 rounded-md bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
+            className={`absolute top-2 right-2 ${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100`}
           >
-            <CentralIcon name="IconExpandSimple" join="round" fill="outlined" radius="3" stroke="2" size={14} />
+            <CentralIcon name="IconExpandSimple" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
           </button>
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-2 font-sans text-left" aria-live="polite">
+      <div className={`mt-3 flex items-center gap-2 font-sans text-left ${variant === 'modal' ? 'pl-2' : ''}`} aria-live="polite">
         <span className="flex-1 min-w-0 text-[13px] text-[var(--text-muted)] truncate text-left">{images[index].caption}</span>
-        <div className="flex-shrink-0 flex items-center gap-1">
+        <div className="flex-shrink-0 flex items-center gap-4">
           <span className="text-[13px] text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
           {images.length > 1 && (
-            <>
+            <div className="flex items-center gap-1">
               <button
                 onClick={prev}
                 aria-label="Previous image"
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+                className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors`}
               >
-                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={18} />
+                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
               </button>
               <button
                 onClick={next}
                 aria-label="Next image"
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+                className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors`}
               >
-                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={18} />
+                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -334,6 +339,7 @@ export default function YearInReview() {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [inViewIndex, setInViewIndex] = useState<number | null>(null);
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -342,6 +348,13 @@ export default function YearInReview() {
   const dragScrollLeft = useRef(0);
   const wasDragged = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
+
+  // Freeze shadow values when modal opens so theme switch during layout animation doesn't cause a glitch
+  const frozenShadowsRef = useRef({ card: shadowCard, cardHover: shadowCardHover, modal: shadowModal });
+  if (!selectedId) {
+    frozenShadowsRef.current = { card: shadowCard, cardHover: shadowCardHover, modal: shadowModal };
+  }
+  const shadows = selectedId ? frozenShadowsRef.current : { card: shadowCard, cardHover: shadowCardHover, modal: shadowModal };
 
   const closeModal = useCallback(() => {
     setExpandedImageUrl(null);
@@ -412,33 +425,50 @@ export default function YearInReview() {
     return () => mql.removeEventListener('change', handler);
   }, []);
 
-  // #region agent log
-  useEffect(() => {
-    const log = () => {
-      const header = document.querySelector('[data-debug="header-month"]');
-      const scroll = document.querySelector('[data-debug="card-scroll"]');
-      const firstCard = scroll?.querySelector('[data-card-index="0"]');
-      const headerRect = header?.getBoundingClientRect();
-      const cardRect = firstCard?.getBoundingClientRect();
-      const headerStyle = header ? getComputedStyle(header as HTMLElement) : null;
-      const scrollStyle = scroll ? getComputedStyle(scroll as HTMLElement) : null;
-      const headerPadL = headerStyle ? parseFloat(headerStyle.paddingLeft) : 0;
-      const textStart = headerRect ? headerRect.left + headerPadL : null;
-      const alignmentDiff = textStart != null && cardRect ? cardRect.left - textStart : null;
-      fetch('http://127.0.0.1:7242/ingest/245655c4-d588-439c-b7aa-d76fd16856e9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'YearInReview.tsx:alignment',message:'layout debug',data:{innerWidth:window.innerWidth,clientWidth:document.documentElement.clientWidth,scrollbarWidth:window.innerWidth-document.documentElement.clientWidth,mdBreakpoint:window.innerWidth>=768,headerLeft:headerRect?.left,headerPaddingLeft:headerPadL,textStart,cardLeft:cardRect?.left,scrollPaddingLeft:scrollStyle?.paddingLeft,alignmentDiff},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'H1'})}).catch(()=>{});
-    };
-    const t = setTimeout(log, 500);
-    window.addEventListener('resize', log);
-    return () => { clearTimeout(t); window.removeEventListener('resize', log); };
-  }, []);
-  // #endregion
-
   useEffect(() => {
     const handleWindowScroll = () => setHasScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleWindowScroll, { passive: true });
     handleWindowScroll();
     return () => window.removeEventListener('scroll', handleWindowScroll);
   }, []);
+
+  // Mobile: card regains color when scrolled to center of viewport
+  useEffect(() => {
+    if (!isMobile) {
+      setInViewIndex(null);
+      return;
+    }
+    const checkCardInView = () => {
+      const container = scrollRef.current;
+      if (!container) return;
+      const cards = container.querySelectorAll('[data-card-index]');
+      if (cards.length === 0) return;
+      const viewportCenterX = window.innerWidth / 2;
+      let closestIndex = 0;
+      let closestDistance = Infinity;
+      cards.forEach((el, i) => {
+        const rect = (el as HTMLElement).getBoundingClientRect();
+        const cardCenterX = rect.left + rect.width / 2;
+        const distance = Math.abs(viewportCenterX - cardCenterX);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestIndex = i;
+        }
+      });
+      const threshold = (cards[closestIndex] as HTMLElement).getBoundingClientRect().width * 0.6;
+      setInViewIndex(closestDistance < threshold ? closestIndex : null);
+    };
+    const handleScroll = () => requestAnimationFrame(checkCardInView);
+    const container = scrollRef.current;
+    if (!container) return;
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', checkCardInView);
+    checkCardInView();
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', checkCardInView);
+    };
+  }, [isMobile]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -529,13 +559,13 @@ export default function YearInReview() {
             transition={{ duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
             className="text-[16px] md:text-[18px] leading-[1.5] tracking-[-0.02em] text-[var(--text-secondary)] mt-6 max-w-md"
           >
-            A collection of our favorite frames from the year — snowy mornings, summer road trips, and the quiet moments in between.
+            A collection of our favorite moments from the year — snowy mornings, summer road trips, and the quiet moments in between.
           </motion.p>
         </div>
       </header>
 
       <main className="pb-20">
-        <div data-debug="header-month" className="mx-auto max-w-3xl px-6 md:px-12">
+        <div className="mx-auto max-w-3xl px-6 md:px-12">
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -548,22 +578,22 @@ export default function YearInReview() {
         <div className="overflow-visible">
           <div
             ref={scrollRef}
-            data-debug="card-scroll"
             onScroll={handleScroll}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
             className="flex overflow-x-auto overflow-y-visible scroll-smooth hide-scrollbar gap-4 md:gap-3 py-4 md:py-5 content-gutter-left content-gutter-right md:cursor-grab"
-            style={{ touchAction: 'pan-x' }}
+            style={{ touchAction: 'pan-x pan-y' }}
             role="region"
             aria-label="Monthly photo cards"
           >
             {YEAR_DATA.map((month, index) => {
-              const transform = getHoverTransform(index, hoveredIndex, shadowCard, shadowCardHover);
+              const transform = getHoverTransform(index, hoveredIndex, shadows.card, shadows.cardHover);
               return (
                 <motion.div
                   key={month.id}
+                  layout
                   layoutId={`card-${month.id}`}
                   data-card-index={index}
                   className="flex-shrink-0 w-[75vw] md:w-[232px] lg:w-[260px] rounded-xl"
@@ -592,7 +622,13 @@ export default function YearInReview() {
                           src={month.cover}
                           alt={month.title}
                           className={`w-full h-full object-cover transition-all duration-300 ${
-                            hoveredIndex === index ? '' : 'grayscale'
+                            isMobile
+                              ? inViewIndex === index
+                                ? ''
+                                : 'grayscale brightness-90'
+                              : hoveredIndex === index
+                                ? ''
+                                : 'grayscale'
                           }`}
                           draggable={false}
                         />
@@ -614,17 +650,17 @@ export default function YearInReview() {
                 onClick={() => scrollByCard('left')}
                 disabled={!canScrollLeft}
                 aria-label="Scroll left"
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none`}
               >
-                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={16} />
+                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
               </button>
               <button
                 onClick={() => scrollByCard('right')}
                 disabled={!canScrollRight}
                 aria-label="Scroll right"
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none`}
               >
-                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={16} />
+                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
               </button>
             </div>
           </div>
@@ -632,7 +668,7 @@ export default function YearInReview() {
 
         {/* Footer — main view */}
         <div className="mx-auto max-w-3xl px-6 md:px-12 pt-16 pb-8">
-          <span className="text-[11px] font-sans text-[var(--text-muted)]">Made with love in New Mexico</span>
+          <span className="text-[15px] text-[var(--text-muted)]">Made with love in New Mexico</span>
         </div>
       </main>
 
@@ -676,34 +712,35 @@ export default function YearInReview() {
             />
 
             <motion.div
+              layout
               layoutId={`card-${selectedId}`}
-              animate={{ boxShadow: shadowModal }}
+              animate={{ boxShadow: shadows.modal }}
               transition={{ type: 'spring', stiffness: 400, damping: 35 }}
               role="dialog"
               aria-modal="true"
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
               className="relative w-full max-w-lg md:max-w-[720px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
-              {/* Header — matches card: title left, month right, more padding up top, X */}
-              <div className="flex items-center justify-between px-5 md:px-6 pt-8 pb-4 select-none">
-                <span className="flex-1 min-w-0 text-[14px] text-[var(--text-primary)] truncate pr-3">{selectedMonth.title}</span>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-[13px] text-[var(--text-muted)] font-sans">{selectedMonth.month}</span>
-                  <button
+              {/* Header — text inset p-4/5, month next to title, X on right */}
+              <div className="flex items-center justify-between pl-4 pr-3 pt-4 pb-0 select-none md:pl-5">
+                <div className="flex-1 min-w-0 flex items-baseline gap-2 pr-3">
+                  <span className="text-[14px] text-[var(--text-primary)] truncate">{selectedMonth.title}</span>
+                  <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0">{selectedMonth.month}</span>
+                </div>
+                <button
                     ref={closeButtonRef}
                     onClick={(e) => { e.stopPropagation(); closeModal(); }}
                     aria-label="Close"
-                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+                    className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors`}
                   >
-                    <CentralIcon name="IconCrossMedium" join="round" fill="outlined" radius="3" stroke="2" size={16} />
+                    <CentralIcon name="IconCrossMedium" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
                   </button>
-                </div>
               </div>
 
-              {/* Scrollable content */}
-              <div className="flex-1 overflow-y-auto px-5 md:px-6 pb-5">
+              {/* Scrollable content — image/gallery p-3, text p-4/5 */}
+              <div className="flex-1 overflow-y-auto pb-3">
                 {selectedMonth.description && (
-                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-4">
+                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-4 pl-4 pr-3 md:pl-5">
                     {selectedMonth.description}
                   </p>
                 )}
@@ -711,6 +748,7 @@ export default function YearInReview() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.15, duration: 0.3, ease: 'easeOut' }}
+                  className="px-3"
                 >
                   <GalleryCarousel images={selectedMonth.gallery} variant="modal" onExpandImage={(url) => setExpandedImageUrl(url)} />
                 </motion.div>

@@ -4,12 +4,13 @@ A beautiful, interactive year-in-review application showcasing family memories m
 
 ## Tech Stack
 
-- Next.js 15 (App Router)
+- Next.js 16 (App Router)
 - React 18
 - TypeScript
 - Tailwind CSS
 - Framer Motion
-- Lucide React Icons
+- Central Icons
+- next-themes
 
 ## Features
 
@@ -34,11 +35,7 @@ A beautiful, interactive year-in-review application showcasing family memories m
    ```
 
 2. **Add font files (optional):**
-   Place your MNKY Banana Grotesk font files in `public/fonts/`:
-   - `mnkybananagrotesk-regular.woff`
-   - `mnkybananagrotesk-medium.woff`
-
-   Or update `app/globals.css` to use different fonts.
+   Fonts are loaded from `fonts/` at the project root. The app uses ABC Marist and MNKY Banana Grotesk. Place your `.woff` / `.woff2` files there and update paths in `app/layout.tsx` if needed.
 
 3. **Run development server:**
    ```bash
@@ -61,12 +58,13 @@ npm start
 washuta-family/
 ├── app/
 │   ├── components/
-│   │   └── YearInReview.tsx    # Main component
-│   ├── layout.tsx               # Root layout
+│   │   ├── YearInReview.tsx    # Main component
+│   │   ├── ThemeToggle.tsx     # Dark/light mode toggle
+│   │   └── ThemeProvider.tsx   # Theme context
+│   ├── layout.tsx               # Root layout (fonts, ThemeProvider)
 │   ├── page.tsx                 # Home page
-│   └── globals.css              # Global styles + fonts
-├── public/
-│   └── fonts/                   # Font files (add your own)
+│   └── globals.css              # Global styles + CSS variables
+├── fonts/                       # ABC Marist, MNKY Banana Grotesk
 ├── next.config.ts
 ├── tailwind.config.ts
 └── package.json
@@ -107,13 +105,11 @@ Update `tailwind.config.ts` or modify classes in the component:
 
 ### Fonts
 
-Option 1: Use your own fonts (current setup)
-- Add `.woff` files to `public/fonts/`
-- Update paths in `app/globals.css`
+Fonts are loaded via `next/font/local` in `app/layout.tsx`:
+- ABC Marist (serif)
+- MNKY Banana Grotesk (sans)
 
-Option 2: Use Google Fonts
-- Remove font-face declarations in `app/globals.css`
-- Add Google Fonts import in `app/layout.tsx`
+Place `.woff` / `.woff2` files in `fonts/` and update the paths in `layout.tsx` to use your own fonts.
 
 ## Deployment
 
