@@ -339,7 +339,8 @@ export default function YearInReview() {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [hasScrolled, setHasScrolled] = useState(false);
-  const [inViewIndex, setInViewIndex] = useState<number | null>(null);
+  /** Mobile: per-card color intensity 0–1 (scroll-based, smooth falloff so center is 1 and neighbors get a touch) */
+  const [cardIntensities, setCardIntensities] = useState<number[]>(() => YEAR_DATA.map(() => 0));
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -432,41 +433,48 @@ export default function YearInReview() {
     return () => window.removeEventListener('scroll', handleWindowScroll);
   }, []);
 
-  // Mobile: card regains color when scrolled to center of viewport
+  // Mobile: per-card color intensity (0–1) from distance to viewport center, smooth falloff so center is full color and neighbors get a touch
   useEffect(() => {
     if (!isMobile) {
-      setInViewIndex(null);
+      setCardIntensities(YEAR_DATA.map(() => 0));
       return;
     }
-    const checkCardInView = () => {
+    const computeIntensities = () => {
       const container = scrollRef.current;
       if (!container) return;
       const cards = container.querySelectorAll('[data-card-index]');
       if (cards.length === 0) return;
       const viewportCenterX = window.innerWidth / 2;
-      let closestIndex = 0;
-      let closestDistance = Infinity;
-      cards.forEach((el, i) => {
+      const intensities: number[] = [];
+      cards.forEach((el) => {
         const rect = (el as HTMLElement).getBoundingClientRect();
         const cardCenterX = rect.left + rect.width / 2;
         const distance = Math.abs(viewportCenterX - cardCenterX);
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closestIndex = i;
+        const cardWidth = rect.width;
+        // Full color when well centered; smooth falloff so neighbors get ~0.2–0.35 at their near edge
+        const peakWidth = cardWidth * 0.45;
+        const falloffWidth = cardWidth * 0.9;
+        let intensity: number;
+        if (distance <= peakWidth) {
+          intensity = 1;
+        } else if (distance <= peakWidth + falloffWidth) {
+          intensity = Math.max(0, 1 - (distance - peakWidth) / falloffWidth * 0.85);
+        } else {
+          intensity = 0;
         }
+        intensities.push(intensity);
       });
-      const threshold = (cards[closestIndex] as HTMLElement).getBoundingClientRect().width * 0.6;
-      setInViewIndex(closestDistance < threshold ? closestIndex : null);
+      setCardIntensities(intensities);
     };
-    const handleScroll = () => requestAnimationFrame(checkCardInView);
+    const handleScroll = () => requestAnimationFrame(computeIntensities);
     const container = scrollRef.current;
     if (!container) return;
     container.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', checkCardInView);
-    checkCardInView();
+    window.addEventListener('resize', computeIntensities);
+    computeIntensities();
     return () => {
       container.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', checkCardInView);
+      window.removeEventListener('resize', computeIntensities);
     };
   }, [isMobile]);
 
@@ -564,7 +572,7 @@ export default function YearInReview() {
         </div>
       </header>
 
-      <main className="pb-20">
+      <main className="pb-8">
         <div className="mx-auto max-w-3xl px-6 md:px-12">
           <motion.span
             initial={{ opacity: 0 }}
@@ -617,19 +625,22 @@ export default function YearInReview() {
                       <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0 ml-3">{month.month}</span>
                     </div>
                     <div className="px-3 pb-3">
-                      <div className="aspect-[4/5] overflow-hidden rounded-lg">
+                      <div className="aspect-[4/5] overflow-hidden rounded-lg relative">
                         <img
                           src={month.cover}
                           alt={month.title}
-                          className={`w-full h-full object-cover transition-all duration-300 ${
+                          className="w-full h-full object-cover"
+                          style={
                             isMobile
-                              ? inViewIndex === index
-                                ? ''
-                                : 'grayscale brightness-90'
-                              : hoveredIndex === index
-                                ? ''
-                                : 'grayscale'
-                          }`}
+                              ? {
+                                  filter: `grayscale(${1 - (cardIntensities[index] ?? 0)}) brightness(${0.88 + 0.12 * (cardIntensities[index] ?? 0)})`,
+                                  transition: 'filter 0.4s ease-out',
+                                }
+                              : {
+                                  filter: hoveredIndex === index ? 'none' : 'grayscale(1)',
+                                  transition: 'filter 0.3s ease-out',
+                                }
+                          }
                           draggable={false}
                         />
                       </div>
