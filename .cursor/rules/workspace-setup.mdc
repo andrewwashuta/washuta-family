@@ -1,0 +1,10 @@
+---
+description: Workspace and AI config links for washuta-family
+globs: 
+alwaysApply: true
+---
+
+# Workspace setup
+
+- **Repo:** This workspace is a Conductor worktree linked to [andrewwashuta/washuta-family](https://github.com/andrewwashuta/washuta-family). Git worktree root: `conductor/repos/washuta-family`; this workspace is the `tianjin` worktree.
+- **Claude Code skills:** Sourced from [andrewwashuta/claude-config](https://github.com/andrewwashuta/claude-config). Skills are symlinked into `~/.claude/skills` via `~/claude-config/install.sh`. To refresh: `cd ~/claude-config && git pull && ./install.sh --force`.

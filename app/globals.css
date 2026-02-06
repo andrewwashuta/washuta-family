@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Font vars set by next/font in layout (--font-marist, --font-grotesk) */
+
+  /* Light mode (default) */
+  --bg-primary: theme('colors.stone.50');
+  --bg-secondary: theme('colors.white');
+  --bg-elevated: theme('colors.white');
+
+  --text-primary: theme('colors.stone.900');
+  --text-secondary: theme('colors.stone.500');
+  --text-muted: theme('colors.stone.400');
+
+  --border-subtle: theme('colors.stone.200');
+
+  --overlay-backdrop: rgba(255, 255, 255, 0.9);
+  --image-bg: theme('colors.stone.100');
+
+  /* Shadow system — layered for depth */
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02);
+  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-card-stack: 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-modal: 0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+}
+
+[data-theme="dark"] {
+  --bg-primary: theme('colors.neutral.950');
+  --bg-secondary: theme('colors.neutral.900');
+  --bg-elevated: theme('colors.neutral.950');
+
+  --text-primary: theme('colors.neutral.100');
+  --text-secondary: theme('colors.neutral.400');
+  --text-muted: theme('colors.neutral.500');
+
+  --border-subtle: rgba(255, 255, 255, 0.1);
+
+  --overlay-backdrop: rgba(0, 0, 0, 0.9);
+  --image-bg: theme('colors.neutral.900');
+
+  /* Shadow system — dark mode */
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.15);
+  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+  --shadow-card-stack: 0 1px 2px rgba(0,0,0,0.12);
+  --shadow-modal: 0 8px 30px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25);
+}
+
+body {
+  font-family: var(--font-marist), Georgia, "Times New Roman", serif;
+  letter-spacing: -0.02em;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.font-sans {
+  font-family: var(--font-grotesk), -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Use 100% (content width) not 100vw so alignment matches header centering; 100vw includes scrollbar */
+.content-gutter-left {
+  padding-left: max(1.5rem, calc((100% - 48rem) / 2 + 1.5rem));
+}
+.content-gutter-right {
+  padding-right: max(1.5rem, calc((100% - 48rem) / 2 + 1.5rem));
+}
+@media (min-width: 768px) {
+  .content-gutter-left {
+    padding-left: max(3rem, calc((100% - 48rem) / 2 + 3rem));
+  }
+  .content-gutter-right {
+    padding-right: max(3rem, calc((100% - 48rem) / 2 + 3rem));
+  }
+}
