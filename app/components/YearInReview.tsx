@@ -290,13 +290,20 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
           <button
             onClick={(e) => { e.stopPropagation(); onExpandImage(images[index].src); }}
             aria-label="Expand image"
+<<<<<<< HEAD
             className={`absolute top-2 right-2 ${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100`}
           >
             <CentralIcon name="IconExpandSimple" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
+=======
+            className="absolute top-2 right-2 p-1 rounded-md bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
+          >
+            <CentralIcon name="IconExpandSimple" join="round" fill="outlined" radius="3" stroke="2" size={14} />
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
           </button>
         )}
       </div>
 
+<<<<<<< HEAD
       <div className={`mt-3 flex items-center gap-2 font-sans text-left ${variant === 'modal' ? 'pl-2' : ''}`} aria-live="polite">
         <span className="flex-1 min-w-0 text-[13px] text-[var(--text-muted)] truncate text-left">{images[index].caption}</span>
         <div className="flex-shrink-0 flex items-center gap-4">
@@ -309,15 +316,37 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
                 className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors`}
               >
                 <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
+=======
+      <div className="mt-3 flex items-center gap-2 font-sans text-left" aria-live="polite">
+        <span className="flex-1 min-w-0 text-[13px] text-[var(--text-muted)] truncate text-left">{images[index].caption}</span>
+        <div className="flex-shrink-0 flex items-center gap-1">
+          <span className="text-[13px] text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prev}
+                aria-label="Previous image"
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+              >
+                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={18} />
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
               </button>
               <button
                 onClick={next}
                 aria-label="Next image"
+<<<<<<< HEAD
                 className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors`}
               >
                 <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
               </button>
             </div>
+=======
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+              >
+                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={18} />
+              </button>
+            </>
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
           )}
         </div>
       </div>
@@ -332,7 +361,10 @@ export default function YearInReview() {
   const shadowCard = isDark ? SHADOW_CARD_DARK : SHADOW_CARD_LIGHT;
   const shadowCardHover = isDark ? SHADOW_CARD_HOVER_DARK : SHADOW_CARD_HOVER_LIGHT;
   const shadowModal = isDark ? SHADOW_MODAL_DARK : SHADOW_MODAL_LIGHT;
+<<<<<<< HEAD
 
+=======
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [expandedImageUrl, setExpandedImageUrl] = useState<string | null>(null);
@@ -340,7 +372,10 @@ export default function YearInReview() {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [hasScrolled, setHasScrolled] = useState(false);
+<<<<<<< HEAD
   const [inViewIndex, setInViewIndex] = useState<number | null>(null);
+=======
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -350,6 +385,7 @@ export default function YearInReview() {
   const wasDragged = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
 
+<<<<<<< HEAD
   // Freeze shadow values when modal opens so theme switch during layout animation doesn't cause a glitch
   const frozenShadowsRef = useRef({ card: shadowCard, cardHover: shadowCardHover, modal: shadowModal });
   if (!selectedId) {
@@ -357,6 +393,8 @@ export default function YearInReview() {
   }
   const shadows = selectedId ? frozenShadowsRef.current : { card: shadowCard, cardHover: shadowCardHover, modal: shadowModal };
 
+=======
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
   const closeModal = useCallback(() => {
     setExpandedImageUrl(null);
     setSelectedId(null);
@@ -426,6 +464,30 @@ export default function YearInReview() {
     return () => mql.removeEventListener('change', handler);
   }, []);
 
+<<<<<<< HEAD
+=======
+  // #region agent log
+  useEffect(() => {
+    const log = () => {
+      const header = document.querySelector('[data-debug="header-month"]');
+      const scroll = document.querySelector('[data-debug="card-scroll"]');
+      const firstCard = scroll?.querySelector('[data-card-index="0"]');
+      const headerRect = header?.getBoundingClientRect();
+      const cardRect = firstCard?.getBoundingClientRect();
+      const headerStyle = header ? getComputedStyle(header as HTMLElement) : null;
+      const scrollStyle = scroll ? getComputedStyle(scroll as HTMLElement) : null;
+      const headerPadL = headerStyle ? parseFloat(headerStyle.paddingLeft) : 0;
+      const textStart = headerRect ? headerRect.left + headerPadL : null;
+      const alignmentDiff = textStart != null && cardRect ? cardRect.left - textStart : null;
+      fetch('http://127.0.0.1:7242/ingest/245655c4-d588-439c-b7aa-d76fd16856e9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'YearInReview.tsx:alignment',message:'layout debug',data:{innerWidth:window.innerWidth,clientWidth:document.documentElement.clientWidth,scrollbarWidth:window.innerWidth-document.documentElement.clientWidth,mdBreakpoint:window.innerWidth>=768,headerLeft:headerRect?.left,headerPaddingLeft:headerPadL,textStart,cardLeft:cardRect?.left,scrollPaddingLeft:scrollStyle?.paddingLeft,alignmentDiff},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'H1'})}).catch(()=>{});
+    };
+    const t = setTimeout(log, 500);
+    window.addEventListener('resize', log);
+    return () => { clearTimeout(t); window.removeEventListener('resize', log); };
+  }, []);
+  // #endregion
+
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
   useEffect(() => {
     const handleWindowScroll = () => setHasScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleWindowScroll, { passive: true });
@@ -433,6 +495,7 @@ export default function YearInReview() {
     return () => window.removeEventListener('scroll', handleWindowScroll);
   }, []);
 
+<<<<<<< HEAD
   // Mobile: card regains color when scrolled to center of viewport
   useEffect(() => {
     if (!isMobile) {
@@ -471,6 +534,8 @@ export default function YearInReview() {
     };
   }, [isMobile]);
 
+=======
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       lastMouseRef.current = { x: e.clientX, y: e.clientY };
@@ -560,13 +625,21 @@ export default function YearInReview() {
             transition={{ duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
             className="text-[16px] md:text-[18px] leading-[1.5] tracking-[-0.02em] text-[var(--text-secondary)] mt-6 max-w-md"
           >
+<<<<<<< HEAD
             A collection of our favorite moments from the year — snowy mornings, summer road trips, and the quiet moments in between.
+=======
+            A collection of our favorite frames from the year — snowy mornings, summer road trips, and the quiet moments in between.
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
           </motion.p>
         </div>
       </header>
 
       <main className="pb-20">
+<<<<<<< HEAD
         <div className="mx-auto max-w-3xl px-6 md:px-12">
+=======
+        <div data-debug="header-month" className="mx-auto max-w-3xl px-6 md:px-12">
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -579,22 +652,37 @@ export default function YearInReview() {
         <div className="overflow-visible">
           <div
             ref={scrollRef}
+<<<<<<< HEAD
+=======
+            data-debug="card-scroll"
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
             onScroll={handleScroll}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
             className="flex overflow-x-auto overflow-y-visible scroll-smooth hide-scrollbar gap-4 md:gap-3 py-4 md:py-5 content-gutter-left content-gutter-right md:cursor-grab"
+<<<<<<< HEAD
             style={{ touchAction: 'pan-x pan-y' }}
+=======
+            style={{ touchAction: 'pan-x' }}
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
             role="region"
             aria-label="Monthly photo cards"
           >
             {YEAR_DATA.map((month, index) => {
+<<<<<<< HEAD
               const transform = getHoverTransform(index, hoveredIndex, shadows.card, shadows.cardHover);
               return (
                 <motion.div
                   key={month.id}
                   layout
+=======
+              const transform = getHoverTransform(index, hoveredIndex, shadowCard, shadowCardHover);
+              return (
+                <motion.div
+                  key={month.id}
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
                   layoutId={`card-${month.id}`}
                   data-card-index={index}
                   className="flex-shrink-0 w-[75vw] md:w-[232px] lg:w-[260px] rounded-xl"
@@ -623,6 +711,7 @@ export default function YearInReview() {
                           src={month.cover}
                           alt={month.title}
                           className={`w-full h-full object-cover transition-all duration-300 ${
+<<<<<<< HEAD
                             isMobile
                               ? inViewIndex === index
                                 ? ''
@@ -630,6 +719,9 @@ export default function YearInReview() {
                               : hoveredIndex === index
                                 ? ''
                                 : 'grayscale'
+=======
+                            hoveredIndex === index ? '' : 'grayscale'
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
                           }`}
                           draggable={false}
                         />
@@ -651,17 +743,29 @@ export default function YearInReview() {
                 onClick={() => scrollByCard('left')}
                 disabled={!canScrollLeft}
                 aria-label="Scroll left"
+<<<<<<< HEAD
                 className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none`}
               >
                 <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
+=======
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={16} />
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
               </button>
               <button
                 onClick={() => scrollByCard('right')}
                 disabled={!canScrollRight}
                 aria-label="Scroll right"
+<<<<<<< HEAD
                 className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none`}
               >
                 <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
+=======
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={16} />
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
               </button>
             </div>
           </div>
@@ -669,7 +773,11 @@ export default function YearInReview() {
 
         {/* Footer — main view */}
         <div className="mx-auto max-w-3xl px-6 md:px-12 pt-16 pb-8">
+<<<<<<< HEAD
           <span className="text-[15px] text-[var(--text-muted)]">Made with love in New Mexico</span>
+=======
+          <span className="text-[11px] font-sans text-[var(--text-muted)]">Made with love in New Mexico</span>
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
         </div>
       </main>
 
@@ -713,15 +821,21 @@ export default function YearInReview() {
             />
 
             <motion.div
+<<<<<<< HEAD
               layout
               layoutId={`card-${selectedId}`}
               animate={{ boxShadow: shadows.modal }}
+=======
+              layoutId={`card-${selectedId}`}
+              animate={{ boxShadow: shadowModal }}
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
               transition={{ type: 'spring', stiffness: 400, damping: 35 }}
               role="dialog"
               aria-modal="true"
               aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
               className="relative w-full max-w-lg md:max-w-[720px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
+<<<<<<< HEAD
               {/* Header — text inset p-4/5, month next to title, X on right */}
               <div className="flex items-center justify-between pl-4 pr-3 pt-4 pb-0 select-none md:pl-5">
                 <div className="flex-1 min-w-0 flex items-baseline gap-2 pr-3">
@@ -742,6 +856,28 @@ export default function YearInReview() {
               <div className="flex-1 overflow-y-auto pb-3">
                 {selectedMonth.description && (
                   <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-4 pl-4 pr-3 md:pl-5">
+=======
+              {/* Header — matches card: title left, month right, more padding up top, X */}
+              <div className="flex items-center justify-between px-5 md:px-6 pt-8 pb-4 select-none">
+                <span className="flex-1 min-w-0 text-[14px] text-[var(--text-primary)] truncate pr-3">{selectedMonth.title}</span>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className="text-[13px] text-[var(--text-muted)] font-sans">{selectedMonth.month}</span>
+                  <button
+                    ref={closeButtonRef}
+                    onClick={(e) => { e.stopPropagation(); closeModal(); }}
+                    aria-label="Close"
+                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors"
+                  >
+                    <CentralIcon name="IconCrossMedium" join="round" fill="outlined" radius="3" stroke="2" size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto px-5 md:px-6 pb-5">
+                {selectedMonth.description && (
+                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-4">
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
                     {selectedMonth.description}
                   </p>
                 )}
@@ -749,7 +885,10 @@ export default function YearInReview() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.15, duration: 0.3, ease: 'easeOut' }}
+<<<<<<< HEAD
                   className="px-3"
+=======
+>>>>>>> 26235f222f1ddcbf688a9d23c1910209898634e8
                 >
                   <GalleryCarousel images={selectedMonth.gallery} variant="modal" onExpandImage={(url) => setExpandedImageUrl(url)} />
                 </motion.div>
