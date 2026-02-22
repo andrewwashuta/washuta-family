@@ -349,6 +349,8 @@ export default function YearInReview() {
   const dragScrollLeft = useRef(0);
   const wasDragged = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
+  const [hasEntered, setHasEntered] = useState(false);
+  useEffect(() => { setHasEntered(true); }, []);
 
   // Freeze shadow values when modal opens so theme switch during layout animation doesn't cause a glitch
   const frozenShadowsRef = useRef({ card: shadowCard, cardHover: shadowCardHover, modal: shadowModal });
@@ -605,9 +607,13 @@ export default function YearInReview() {
                   layoutId={`card-${month.id}`}
                   data-card-index={index}
                   className="flex-shrink-0 w-[75vw] md:w-[232px] lg:w-[260px] rounded-xl"
-                  animate={{ y: transform.y, scale: transform.scale, boxShadow: transform.boxShadow }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  style={{ zIndex: transform.zIndex, opacity: selectedId === month.id ? 0 : 1 }}
+                  {...(!hasEntered && { initial: { opacity: 0, y: 20 } })}
+                  animate={{ opacity: 1, y: transform.y, scale: transform.scale, boxShadow: transform.boxShadow }}
+                  transition={!hasEntered
+                    ? { duration: 0.5, delay: 0.6 + index * 0.06, ease: [0.25, 0.1, 0.25, 1] }
+                    : { type: 'spring', stiffness: 400, damping: 30 }
+                  }
+                  style={{ zIndex: transform.zIndex, ...(selectedId === month.id && { opacity: 0 }) }}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseMove={() => { if (hoveredIndex !== index && !selectedId) setHoveredIndex(index); }}
                   onMouseLeave={() => setHoveredIndex(null)}
@@ -651,7 +657,12 @@ export default function YearInReview() {
             })}
           </div>
         </div>
-        <div className="mx-auto max-w-3xl px-6 md:px-12">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 1.1, ease: [0.25, 0.1, 0.25, 1] }}
+          className="mx-auto max-w-3xl px-6 md:px-12"
+        >
           <div className="mt-3 flex items-center justify-between">
             <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
               {isMobile ? 'Swipe to explore' : 'Scroll to explore'}
@@ -675,12 +686,17 @@ export default function YearInReview() {
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Footer — main view */}
-        <div className="mx-auto max-w-3xl px-6 md:px-12 pt-16 pb-8">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 1.3, ease: [0.25, 0.1, 0.25, 1] }}
+          className="mx-auto max-w-3xl px-6 md:px-12 pt-16 pb-8"
+        >
           <span className="text-[15px] text-[var(--text-muted)]">Made with love in New Mexico</span>
-        </div>
+        </motion.div>
       </main>
 
       {/* Fullscreen expanded image overlay */}
