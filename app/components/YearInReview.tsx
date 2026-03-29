@@ -6,6 +6,7 @@ import { CentralIcon } from '@central-icons-react/all';
 import { useTheme } from 'next-themes';
 import { ThemeToggle } from './ThemeToggle';
 import { YEAR_DATA } from '../../data/months';
+import { SunlightOverlay } from './SunlightOverlay';
 
 const SHADOW_CARD_LIGHT = '0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02)';
 const SHADOW_CARD_DARK = '0 1px 2px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.15)';
@@ -134,7 +135,7 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
 
 
 export default function YearInReview() {
-  const { resolvedTheme } = useTheme();
+  const { resolvedTheme, theme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const shadowCard = isDark ? SHADOW_CARD_DARK : SHADOW_CARD_LIGHT;
   const shadowCardHover = isDark ? SHADOW_CARD_HOVER_DARK : SHADOW_CARD_HOVER_LIGHT;
@@ -333,6 +334,8 @@ export default function YearInReview() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors duration-300">
+
+      <SunlightOverlay active={theme === 'daylight'} />
 
       <div
         className="fixed top-0 left-0 right-0 z-30 h-16 pointer-events-none transition-opacity duration-300"
