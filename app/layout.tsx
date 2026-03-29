@@ -4,21 +4,30 @@ import './globals.css'
 import { ThemeProvider } from './components/ThemeProvider'
 import { Agentation } from 'agentation'
 
-const marist = localFont({
+const mdui = localFont({
   src: [
-    { path: '../fonts/ABCMarist-Book-Trial.woff2', weight: '400' },
-    { path: '../fonts/ABCMarist-Book-Trial.woff', weight: '400' },
+    { path: '../fonts/MDUI-Regular.woff2', weight: '400' },
+    { path: '../fonts/MDUI-Medium.woff2', weight: '500' },
   ],
-  variable: '--font-marist',
+  variable: '--font-mdui',
   display: 'swap',
 })
 
-const grotesk = localFont({
+const mdio = localFont({
   src: [
-    { path: '../fonts/mnkybananagrotesk-regular.woff2', weight: '400' },
-    { path: '../fonts/mnkybananagrotesk-regular.woff', weight: '400' },
+    { path: '../fonts/MDIO-Regular.woff2', weight: '400' },
+    { path: '../fonts/MDIO-Medium.woff2', weight: '500' },
   ],
-  variable: '--font-grotesk',
+  variable: '--font-mdio',
+  display: 'swap',
+})
+
+const mduixl = localFont({
+  src: [
+    { path: '../fonts/MDUIXL-Regular.woff2', weight: '400' },
+    { path: '../fonts/MDUIXL-Medium.woff2', weight: '500' },
+  ],
+  variable: '--font-mduixl',
   display: 'swap',
 })
 
@@ -44,7 +53,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${marist.variable} ${grotesk.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${mdui.variable} ${mdio.variable} ${mduixl.variable}`}>
       <body className="antialiased">
         <ThemeProvider>
           {children}

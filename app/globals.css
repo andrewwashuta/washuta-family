@@ -3,52 +3,87 @@
 @tailwind utilities;
 
 :root {
-  /* Font vars set by next/font in layout (--font-marist, --font-grotesk) */
+  /* Font vars set by next/font in layout (--font-mdui, --font-mdio, --font-mduixl) */
+  /* OKLCH palette — warm stone hue (~75), perceptually uniform steps */
 
   /* Light mode (default) */
-  --bg-primary: theme('colors.stone.50');
-  --bg-secondary: theme('colors.white');
-  --bg-elevated: theme('colors.white');
+  --bg-primary: oklch(0.985 0.003 75);
+  --bg-secondary: oklch(1 0 0);
+  --bg-elevated: oklch(1 0 0);
 
-  --text-primary: theme('colors.stone.900');
-  --text-secondary: theme('colors.stone.500');
-  --text-muted: theme('colors.stone.400');
+  --text-primary: oklch(0.145 0.012 75);
+  --text-secondary: oklch(0.40 0.012 65);
+  --text-muted: oklch(0.52 0.010 65);
 
-  --border-subtle: theme('colors.stone.200');
+  --border-subtle: oklch(0.88 0.005 75);
 
-  --overlay-backdrop: rgba(255, 255, 255, 0.9);
-  --image-bg: theme('colors.stone.100');
+  --overlay-backdrop: oklch(0.985 0.003 75 / 0.9);
+  --image-bg: oklch(0.95 0.004 75);
 
-  /* Shadow system — layered for depth */
-  --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02);
-  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-card-stack: 0 1px 2px rgba(0,0,0,0.03);
-  --shadow-modal: 0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  /* Shadow system — warm multi-layer, geometric blur progression */
+  --shadow-card:
+    0px 0.5px 0.7px oklch(0.30 0.01 75 / 0.07),
+    0px 1.1px 1.5px oklch(0.30 0.01 75 / 0.07),
+    0px 2.7px 3.8px oklch(0.30 0.01 75 / 0.07);
+  --shadow-card-hover:
+    0px 0.5px 0.6px oklch(0.30 0.01 75 / 0.06),
+    0px 1.2px 1.4px -0.8px oklch(0.30 0.01 75 / 0.06),
+    0px 2.8px 3.2px -1.5px oklch(0.30 0.01 75 / 0.06),
+    0px 5.5px 6.3px -2.3px oklch(0.30 0.01 75 / 0.06),
+    0px 10px 11.4px -3px oklch(0.30 0.01 75 / 0.06);
+  --shadow-card-stack:
+    0px 0.3px 0.5px oklch(0.30 0.01 75 / 0.05),
+    0px 0.8px 1.2px oklch(0.30 0.01 75 / 0.04);
+  --shadow-modal:
+    0px 0.5px 0.7px oklch(0.30 0.01 75 / 0.05),
+    0px 1.6px 2px -0.4px oklch(0.30 0.01 75 / 0.05),
+    0px 3px 3.8px -0.8px oklch(0.30 0.01 75 / 0.05),
+    0px 5.3px 6.7px -1.2px oklch(0.30 0.01 75 / 0.05),
+    0px 9.3px 11.7px -1.6px oklch(0.30 0.01 75 / 0.05),
+    0px 16px 20.1px -2px oklch(0.30 0.01 75 / 0.05),
+    0px 27px 34px -2.5px oklch(0.30 0.01 75 / 0.05);
 }
 
 [data-theme="dark"] {
-  --bg-primary: theme('colors.neutral.950');
-  --bg-secondary: theme('colors.neutral.900');
-  --bg-elevated: theme('colors.neutral.950');
+  --bg-primary: oklch(0.075 0.005 75);
+  --bg-secondary: oklch(0.13 0.008 75);
+  --bg-elevated: oklch(0.075 0.005 75);
 
-  --text-primary: theme('colors.neutral.100');
-  --text-secondary: theme('colors.neutral.400');
-  --text-muted: theme('colors.neutral.500');
+  --text-primary: oklch(0.93 0.007 75);
+  --text-secondary: oklch(0.72 0.010 70);
+  --text-muted: oklch(0.50 0.012 70);
 
-  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-subtle: oklch(0.25 0.005 75);
 
-  --overlay-backdrop: rgba(0, 0, 0, 0.9);
-  --image-bg: theme('colors.neutral.900');
+  --overlay-backdrop: oklch(0.075 0.005 75 / 0.9);
+  --image-bg: oklch(0.13 0.008 75);
 
-  /* Shadow system — dark mode */
-  --shadow-card: 0 1px 2px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.15);
-  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
-  --shadow-card-stack: 0 1px 2px rgba(0,0,0,0.12);
-  --shadow-modal: 0 8px 30px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25);
+  /* Shadow system — dark mode, multi-layer with tapering opacity */
+  --shadow-card:
+    0px 0.5px 0.7px oklch(0 0 0 / 0.25),
+    0px 1.1px 1.5px oklch(0 0 0 / 0.22),
+    0px 2.7px 3.8px oklch(0 0 0 / 0.18);
+  --shadow-card-hover:
+    0px 0.5px 0.6px oklch(0 0 0 / 0.22),
+    0px 1.2px 1.4px -0.8px oklch(0 0 0 / 0.20),
+    0px 2.8px 3.2px -1.5px oklch(0 0 0 / 0.18),
+    0px 5.5px 6.3px -2.3px oklch(0 0 0 / 0.16),
+    0px 10px 11.4px -3px oklch(0 0 0 / 0.14);
+  --shadow-card-stack:
+    0px 0.3px 0.5px oklch(0 0 0 / 0.18),
+    0px 0.8px 1.2px oklch(0 0 0 / 0.14);
+  --shadow-modal:
+    0px 0.5px 0.7px oklch(0 0 0 / 0.18),
+    0px 1.6px 2px -0.4px oklch(0 0 0 / 0.17),
+    0px 3px 3.8px -0.8px oklch(0 0 0 / 0.16),
+    0px 5.3px 6.7px -1.2px oklch(0 0 0 / 0.15),
+    0px 9.3px 11.7px -1.6px oklch(0 0 0 / 0.14),
+    0px 16px 20.1px -2px oklch(0 0 0 / 0.12),
+    0px 27px 34px -2.5px oklch(0 0 0 / 0.10);
 }
 
 body {
-  font-family: var(--font-marist), Georgia, "Times New Roman", serif;
+  font-family: var(--font-mdui), Georgia, "Times New Roman", serif;
   letter-spacing: -0.02em;
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -56,7 +91,7 @@ body {
 }
 
 .font-sans {
-  font-family: var(--font-grotesk), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-mdio), -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .hide-scrollbar {
