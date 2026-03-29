@@ -567,7 +567,8 @@ export default function YearInReview() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-            className="text-[16px] md:text-[18px] leading-[1.5] tracking-[-0.02em] text-[var(--text-secondary)] mt-6 max-w-md"
+            className="text-[15px] md:text-[16px] leading-[1.5] tracking-normal text-[var(--text-secondary)] mt-6 max-w-md"
+            style={{ fontFamily: 'var(--font-mduixl), Georgia, serif', fontFeatureSettings: '"ss01"' }}
           >
             A collection of our favorite moments from the year — snowy mornings, summer road trips, and the quiet moments in between.
           </motion.p>
@@ -621,20 +622,20 @@ export default function YearInReview() {
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${month.month} - ${month.title}`}
+                  aria-label={month.month}
                 >
                   <div
                     className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden"
                   >
                     <div className="h-[44px] flex items-center justify-between px-4 select-none">
-                      <span className="text-[14px] text-[var(--text-primary)] truncate">{month.title}</span>
-                      <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0 ml-3">{month.month}</span>
+                      <motion.span layoutId={`month-label-${month.id}`} className="text-[14px] font-medium text-[var(--text-primary)]">{month.month}</motion.span>
+                      <span className="text-[12px] text-[var(--text-muted)] font-sans">({month.stats.photos})</span>
                     </div>
                     <div className="px-3 pb-3">
                       <div className="aspect-[4/5] overflow-hidden rounded-lg relative">
                         <img
                           src={month.cover}
-                          alt={month.title}
+                          alt={month.month}
                           className="w-full h-full object-cover"
                           style={
                             isMobile
@@ -745,14 +746,13 @@ export default function YearInReview() {
               transition={{ type: 'spring', stiffness: 400, damping: 35 }}
               role="dialog"
               aria-modal="true"
-              aria-label={`${selectedMonth.title} - ${selectedMonth.month} ${selectedMonth.year}`}
+              aria-label={`${selectedMonth.month} ${selectedMonth.year}`}
               className="relative w-full max-w-lg md:max-w-[720px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
-              {/* Header — text inset p-4/5, month next to title, X on right */}
+              {/* Header */}
               <div className="flex items-center justify-between pl-4 pr-3 pt-4 pb-0 select-none md:pl-5">
-                <div className="flex-1 min-w-0 flex items-baseline gap-2 pr-3">
-                  <span className="text-[14px] text-[var(--text-primary)] truncate">{selectedMonth.title}</span>
-                  <span className="text-[13px] text-[var(--text-muted)] font-sans flex-shrink-0">{selectedMonth.month}</span>
+                <div className="flex-1 min-w-0 pr-3">
+                  <motion.span layoutId={`month-label-${selectedId}`} className="text-[16px] font-medium text-[var(--text-primary)] inline-block">{selectedMonth.month}</motion.span>
                 </div>
                 <button
                     ref={closeButtonRef}
@@ -767,9 +767,14 @@ export default function YearInReview() {
               {/* Scrollable content — image/gallery p-3, text p-4/5 */}
               <div className="flex-1 overflow-y-auto pb-3">
                 {selectedMonth.description && (
-                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-4 pl-4 pr-3 md:pl-5">
+                  <motion.p
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.12, duration: 0.25, ease: 'easeOut' }}
+                    className="text-[14px] md:text-[15px] text-[var(--text-secondary)] leading-[1.6] mb-4 pl-4 pr-6 md:pl-5 md:pr-10 max-w-prose"
+                  >
                     {selectedMonth.description}
-                  </p>
+                  </motion.p>
                 )}
                 <motion.div
                   initial={{ opacity: 0 }}
