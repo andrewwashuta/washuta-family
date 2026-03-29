@@ -5,18 +5,20 @@ import { CentralIcon } from "@central-icons-react/all";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const CYCLE = ["system", "light", "dark"] as const;
+const CYCLE = ["system", "light", "dark", "daylight"] as const;
 
 const iconNames = {
   system: "IconTelevision",
   light: "IconSun",
   dark: "IconMoon",
+  daylight: "IconSunrise",
 } as const;
 
 const labels = {
   system: "System",
   light: "Light",
   dark: "Dark",
+  daylight: "Daylight",
 };
 
 export function ThemeToggle() {
