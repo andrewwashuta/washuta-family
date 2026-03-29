@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CentralIcon } from '@central-icons-react/all';
 import { useTheme } from 'next-themes';
 import { ThemeToggle } from './ThemeToggle';
+import { YEAR_DATA } from '../../data/months';
 
 const SHADOW_CARD_LIGHT = '0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02)';
 const SHADOW_CARD_DARK = '0 1px 2px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.15)';
@@ -18,200 +19,6 @@ const ICON_BUTTON_PADDING = 'p-1.5';
 const ICON_BUTTON_ROUNDED = 'rounded-lg';
 const ICON_BUTTON_SIZE = 18;
 
-const YEAR_DATA = [
-  {
-    id: 'january',
-    month: 'January',
-    year: '2025',
-    title: 'Fresh starts',
-    location: 'Home',
-    description: 'Cozy mornings, hot cocoa after sled rides, and a new tradition of Sunday waffles.',
-    cover: 'https://picsum.photos/seed/jan-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/jan-1/900/1200', caption: 'Snowy backyard adventures.' },
-      { src: 'https://picsum.photos/seed/jan-2/900/1200', caption: 'The annual puzzle marathon.' },
-      { src: 'https://picsum.photos/seed/jan-3/900/1200', caption: 'Quiet library afternoons.' },
-      { src: 'https://picsum.photos/seed/jan-4/900/1200', caption: 'Fireside story time.' },
-    ]
-  },
-  {
-    id: 'february',
-    month: 'February',
-    year: '2025',
-    title: 'Warm hearts',
-    location: 'Home',
-    description: 'Handmade valentines, a surprise snow day, and a living room dance party.',
-    cover: 'https://picsum.photos/seed/feb-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/feb-1/900/1200', caption: 'Glittery valentines on display.' },
-      { src: 'https://picsum.photos/seed/feb-2/900/1200', caption: 'Snowball mission in the park.' },
-      { src: 'https://picsum.photos/seed/feb-3/900/1200', caption: 'Homemade heart-shaped pizzas.' },
-      { src: 'https://picsum.photos/seed/feb-4/900/1200', caption: 'Movie night cocoa station.' },
-    ]
-  },
-  {
-    id: 'march',
-    month: 'March',
-    year: '2025',
-    title: 'First blooms',
-    location: 'Local trails',
-    description: 'Early hikes, garden prep, and the first picnic of the season by the lake.',
-    cover: 'https://picsum.photos/seed/mar-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/mar-1/900/1200', caption: 'Windy trail smiles.' },
-      { src: 'https://picsum.photos/seed/mar-2/900/1200', caption: 'Planting seedlings together.' },
-      { src: 'https://picsum.photos/seed/mar-3/900/1200', caption: 'Picnic blanket + sunshine.' },
-      { src: 'https://picsum.photos/seed/mar-4/900/1200', caption: 'Rainy day fort building.' },
-    ]
-  },
-  {
-    id: 'april',
-    month: 'April',
-    year: '2025',
-    title: 'Play outside',
-    location: 'Soccer fields',
-    description: 'Weekend soccer games, splashy rain walks, and pastel egg adventures.',
-    cover: 'https://picsum.photos/seed/apr-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/apr-1/900/1200', caption: 'Sideline cheers.' },
-      { src: 'https://picsum.photos/seed/apr-2/900/1200', caption: 'Colorful egg hunt.' },
-      { src: 'https://picsum.photos/seed/apr-3/900/1200', caption: 'Umbrella runway.' },
-      { src: 'https://picsum.photos/seed/apr-4/900/1200', caption: 'Kitchen cupcake test run.' },
-    ]
-  },
-  {
-    id: 'may',
-    month: 'May',
-    year: '2025',
-    title: 'Golden evenings',
-    location: 'School & backyard',
-    description: 'School performances, bike rides at sunset, and the first backyard campout.',
-    cover: 'https://picsum.photos/seed/may-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/may-1/900/1200', caption: 'Stage lights and proud smiles.' },
-      { src: 'https://picsum.photos/seed/may-2/900/1200', caption: 'Bike trail breakthroughs.' },
-      { src: 'https://picsum.photos/seed/may-3/900/1200', caption: 'Campfire marshmallow magic.' },
-      { src: 'https://picsum.photos/seed/may-4/900/1200', caption: 'Garden blooms on deck.' },
-    ]
-  },
-  {
-    id: 'june',
-    month: 'June',
-    year: '2025',
-    title: 'Summer energy',
-    location: 'Pool & road trips',
-    description: 'Pool afternoons, messy popsicles, and day trips that stretched late.',
-    cover: 'https://picsum.photos/seed/jun-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/jun-1/900/1200', caption: 'Poolside cannonballs.' },
-      { src: 'https://picsum.photos/seed/jun-2/900/1200', caption: 'Popsicle rainbow.' },
-      { src: 'https://picsum.photos/seed/jun-3/900/1200', caption: 'Road trip playlists.' },
-      { src: 'https://picsum.photos/seed/jun-4/900/1200', caption: 'Backyard sprinkler parties.' },
-    ]
-  },
-  {
-    id: 'july',
-    month: 'July',
-    year: '2025',
-    title: 'Big sky days',
-    location: 'Lake house',
-    description: 'Fourth of July sparklers, lake weekends, and sunset paddleboarding.',
-    cover: 'https://picsum.photos/seed/jul-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/jul-1/900/1200', caption: 'Sparklers after dusk.' },
-      { src: 'https://picsum.photos/seed/jul-2/900/1200', caption: 'Lake dock leaps.' },
-      { src: 'https://picsum.photos/seed/jul-3/900/1200', caption: 'Sunset paddle session.' },
-      { src: 'https://picsum.photos/seed/jul-4/900/1200', caption: 'Berry picking haul.' },
-    ]
-  },
-  {
-    id: 'august',
-    month: 'August',
-    year: '2025',
-    title: 'Road miles',
-    location: 'Mountain trip',
-    description: 'Mountain air, roadside diners, and the loudest family sing-alongs.',
-    cover: 'https://picsum.photos/seed/aug-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/aug-1/900/1200', caption: 'Summit selfie.' },
-      { src: 'https://picsum.photos/seed/aug-2/900/1200', caption: 'Trail snacks break.' },
-      { src: 'https://picsum.photos/seed/aug-3/900/1200', caption: 'Vintage roadside stop.' },
-      { src: 'https://picsum.photos/seed/aug-4/900/1200', caption: 'Cabin board games.' },
-    ]
-  },
-  {
-    id: 'september',
-    month: 'September',
-    year: '2025',
-    title: 'New routines',
-    location: 'School & neighborhood',
-    description: 'Back-to-school energy, fresh notebooks, and after-dinner walks.',
-    cover: 'https://picsum.photos/seed/sep-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/sep-1/900/1200', caption: 'First-day outfits.' },
-      { src: 'https://picsum.photos/seed/sep-2/900/1200', caption: 'Homework nook refresh.' },
-      { src: 'https://picsum.photos/seed/sep-3/900/1200', caption: 'Evening neighborhood stroll.' },
-      { src: 'https://picsum.photos/seed/sep-4/900/1200', caption: 'Apple orchard visit.' },
-    ]
-  },
-  {
-    id: 'october',
-    month: 'October',
-    year: '2025',
-    title: 'Autumn glow',
-    location: 'Pumpkin patch',
-    description: 'Pumpkin carving, crunchy leaves, and the spookiest movie marathons.',
-    cover: 'https://picsum.photos/seed/oct-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/oct-1/900/1200', caption: 'Pumpkin patch portrait.' },
-      { src: 'https://picsum.photos/seed/oct-2/900/1200', caption: 'Jack-o\'-lantern lineup.' },
-      { src: 'https://picsum.photos/seed/oct-3/900/1200', caption: 'Leaf piles takeoff.' },
-      { src: 'https://picsum.photos/seed/oct-4/900/1200', caption: 'Costume test run.' },
-    ]
-  },
-  {
-    id: 'november',
-    month: 'November',
-    year: '2025',
-    title: 'Gather + savor',
-    location: 'Home',
-    description: 'Turkey trials, gratitude notes, and long chats around the table.',
-    cover: 'https://picsum.photos/seed/nov-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/nov-1/900/1200', caption: 'Pie baking lineup.' },
-      { src: 'https://picsum.photos/seed/nov-2/900/1200', caption: 'Table setting ritual.' },
-      { src: 'https://picsum.photos/seed/nov-3/900/1200', caption: 'Gratitude notes.' },
-      { src: 'https://picsum.photos/seed/nov-4/900/1200', caption: 'Friendsgiving laughter.' },
-    ]
-  },
-  {
-    id: 'december',
-    month: 'December',
-    year: '2025',
-    title: 'Lights on',
-    location: 'Home',
-    description: 'Tree trimming, cookie exchanges, and the coziest holiday nights.',
-    cover: 'https://picsum.photos/seed/dec-1/900/1200',
-    stats: { photos: 4, videos: 0 },
-    gallery: [
-      { src: 'https://picsum.photos/seed/dec-1/900/1200', caption: 'Ornament memories.' },
-      { src: 'https://picsum.photos/seed/dec-2/900/1200', caption: 'Snowy night drive.' },
-      { src: 'https://picsum.photos/seed/dec-3/900/1200', caption: 'Cookie decorating.' },
-      { src: 'https://picsum.photos/seed/dec-4/900/1200', caption: 'Fireplace glow.' },
-    ]
-  },
-];
 
 function getHoverTransform(index: number, hoveredIndex: number | null, shadowCard: string, shadowCardHover: string) {
   if (hoveredIndex === null) {
@@ -335,6 +142,7 @@ export default function YearInReview() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [expandedImageUrl, setExpandedImageUrl] = useState<string | null>(null);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -361,6 +169,7 @@ export default function YearInReview() {
 
   const closeModal = useCallback(() => {
     setExpandedImageUrl(null);
+    setDescriptionExpanded(false);
     setSelectedId(null);
   }, []);
 
@@ -570,7 +379,25 @@ export default function YearInReview() {
             className="text-[15px] md:text-[16px] leading-[1.5] tracking-normal text-[var(--text-secondary)] mt-6 max-w-md"
             style={{ fontFamily: 'var(--font-mduixl), Georgia, serif', fontFeatureSettings: '"ss01"' }}
           >
-            A collection of our favorite moments from the year — snowy mornings, summer road trips, and the quiet moments in between.
+            Hi! It&apos;s us — late (as usual, ugh!), but still wanting to share about ANOTHER wild year, however, thankfully one that ended on the most beautiful note.
+          </motion.p>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+            className="text-[15px] md:text-[16px] leading-[1.5] tracking-normal text-[var(--text-secondary)] mt-4 max-w-md"
+            style={{ fontFamily: 'var(--font-mduixl), Georgia, serif', fontFeatureSettings: '"ss01"' }}
+          >
+            We welcomed Raya Luz Washuta on December 30th and she has been such a light and the sweetest addition to our family. We&apos;ve been soaking up the time all together, and frankly also trying to catch up on life since her arrival!
+          </motion.p>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+            className="text-[15px] md:text-[16px] leading-[1.5] tracking-normal text-[var(--text-secondary)] mt-4 max-w-md"
+            style={{ fontFamily: 'var(--font-mduixl), Georgia, serif', fontFeatureSettings: '"ss01"' }}
+          >
+            Please enjoy photos and memories of our 2025 — there were tears, laughs, and a lot of &ldquo;you&apos;ve got to be kidding me?!&rdquo; ;)
           </motion.p>
         </div>
       </header>
@@ -752,7 +579,7 @@ export default function YearInReview() {
               {/* Header */}
               <div className="flex items-center justify-between pl-4 pr-3 pt-4 pb-0 select-none md:pl-5">
                 <div className="flex-1 min-w-0 pr-3">
-                  <motion.span layoutId={`month-label-${selectedId}`} className="text-[16px] font-medium text-[var(--text-primary)] inline-block">{selectedMonth.month}</motion.span>
+                  <motion.span layoutId={`month-label-${selectedId}`} className="text-[14px] md:text-[15px] font-medium text-[var(--text-primary)] inline-block">{selectedMonth.month}</motion.span>
                 </div>
                 <button
                     ref={closeButtonRef}
@@ -767,14 +594,34 @@ export default function YearInReview() {
               {/* Scrollable content — image/gallery p-3, text p-4/5 */}
               <div className="flex-1 overflow-y-auto pb-3">
                 {selectedMonth.description && (
-                  <motion.p
+                  <motion.div
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.12, duration: 0.25, ease: 'easeOut' }}
-                    className="text-[14px] md:text-[15px] text-[var(--text-secondary)] leading-[1.6] mb-4 pl-4 pr-6 md:pl-5 md:pr-10 max-w-prose"
+                    className="mb-4 pl-4 pr-6 md:pl-5 md:pr-10"
                   >
-                    {selectedMonth.description}
-                  </motion.p>
+                    <div
+                      className={`transition-[max-height] duration-300 ease-out overflow-hidden ${
+                        descriptionExpanded
+                          ? 'max-h-[5lh] overflow-y-auto description-scroll'
+                          : 'max-h-[2.75lh]'
+                      }`}
+                      style={!descriptionExpanded ? {
+                        maskImage: 'linear-gradient(to bottom, black 0%, black 25%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0.15) 80%, transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 25%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0.15) 80%, transparent 100%)',
+                      } : undefined}
+                    >
+                      <p className="text-[14px] md:text-[15px] text-[var(--text-muted)] leading-[1.6] max-w-prose">
+                        {selectedMonth.description}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setDescriptionExpanded(!descriptionExpanded)}
+                      className="text-[13px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mt-1"
+                    >
+                      {descriptionExpanded ? 'Read less' : 'Read more'}
+                    </button>
+                  </motion.div>
                 )}
                 <motion.div
                   initial={{ opacity: 0 }}
