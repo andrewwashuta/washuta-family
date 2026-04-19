@@ -253,7 +253,12 @@ export default function YearInReview() {
   }, []);
 
   useEffect(() => {
-    const handleWindowScroll = () => setHasScrolled(window.scrollY > 10);
+    const handleWindowScroll = () => {
+      setHasScrolled((prev) => {
+        const next = window.scrollY > 10;
+        return prev === next ? prev : next;
+      });
+    };
     window.addEventListener('scroll', handleWindowScroll, { passive: true });
     handleWindowScroll();
     return () => window.removeEventListener('scroll', handleWindowScroll);
@@ -459,9 +464,9 @@ export default function YearInReview() {
                     : { type: 'spring', stiffness: 400, damping: 30 }
                   }
                   style={{ zIndex: transform.zIndex, ...(selectedId === month.id && { opacity: 0 }) }}
-                  onMouseEnter={() => setHoveredIndex(index)}
-                  onMouseMove={() => { if (hoveredIndex !== index && !selectedId) setHoveredIndex(index); }}
-                  onMouseLeave={() => setHoveredIndex(null)}
+                  onMouseEnter={isMobile ? undefined : () => setHoveredIndex(index)}
+                  onMouseMove={isMobile ? undefined : () => { if (hoveredIndex !== index && !selectedId) setHoveredIndex(index); }}
+                  onMouseLeave={isMobile ? undefined : () => setHoveredIndex(null)}
                   onClick={() => { if (!wasDragged.current) setSelectedId(month.id); }}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
                   role="button"
@@ -469,7 +474,7 @@ export default function YearInReview() {
                   aria-label={month.month}
                 >
                   <div
-                    className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden"
+                    className="card-surface bg-[var(--bg-secondary)] rounded-xl overflow-hidden"
                   >
                     <div className="h-[44px] flex items-center justify-between px-4 select-none">
                       <motion.span layoutId={`month-label-${month.id}`} className="text-[14px] font-medium text-[var(--text-primary)]">{month.month}</motion.span>
@@ -543,7 +548,20 @@ export default function YearInReview() {
           transition={{ duration: 0.5, delay: 1.3, ease: [0.25, 0.1, 0.25, 1] }}
           className="mx-auto max-w-3xl px-6 md:px-12 pt-16 pb-8"
         >
-          <span className="text-[15px] text-[var(--text-muted)]">Made with love in New Mexico</span>
+          <div className="flex flex-col gap-0.5">
+            <span
+              className="text-[15px] md:text-[16px] text-[var(--text-muted)]"
+              style={{ fontFamily: 'var(--font-mduixl), Georgia, serif' }}
+            >
+              With love from New Mexico,
+            </span>
+            <span
+              className="text-[22px] leading-none text-[var(--text-secondary)]"
+              style={{ fontFamily: 'var(--font-caveat), "Segoe Script", cursive', letterSpacing: '-0.02em' }}
+            >
+              Andrew, Seneca, Thor &amp; Raya
+            </span>
+          </div>
         </motion.div>
       </main>
 
