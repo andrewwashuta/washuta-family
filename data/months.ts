@@ -8,8 +8,9 @@ export type MonthData = {
   location: string;
   description: string;
   cover: string;
+  coverBlurDataURL: string;
   stats: { photos: number; videos: number };
-  gallery: Array<{ src: string; caption: string }>;
+  gallery: Array<{ src: string; caption: string; blurDataURL: string }>;
   /** When false, the month is hidden from the gallery until photos are added. */
   published?: boolean;
 };
@@ -144,12 +145,15 @@ const METADATA: MonthMeta[] = [
 ];
 
 function composeMonthData(meta: MonthMeta): MonthData {
-  const files = PHOTOS_BY_MONTH[meta.id] ?? [];
-  const gallery = files.map((filename) => ({
-    src: `/photos/${meta.id}/${filename}`,
-    caption: meta.captions?.[filename] ?? '',
+  const entries = PHOTOS_BY_MONTH[meta.id] ?? [];
+  const gallery = entries.map((entry) => ({
+    src: `/photos/${meta.id}/${entry.file}`,
+    caption: meta.captions?.[entry.file] ?? '',
+    blurDataURL: entry.blurDataURL,
   }));
-  const defaultCover = files[0] ? `/photos/${meta.id}/${files[0]}` : '';
+  const cover = meta.cover ?? (entries[0] ? `/photos/${meta.id}/${entries[0].file}` : '');
+  const coverEntry = entries.find((e) => `/photos/${meta.id}/${e.file}` === cover) ?? entries[0];
+  const coverBlurDataURL = coverEntry?.blurDataURL ?? '';
   return {
     id: meta.id,
     month: meta.month,
@@ -157,8 +161,9 @@ function composeMonthData(meta: MonthMeta): MonthData {
     title: meta.title,
     location: meta.location,
     description: meta.description,
-    cover: meta.cover ?? defaultCover,
-    stats: { photos: files.length, videos: 0 },
+    cover,
+    coverBlurDataURL,
+    stats: { photos: entries.length, videos: 0 },
     gallery,
     published: meta.published,
   };
