@@ -82,6 +82,22 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
   return (
     <div className="w-full">
       <div className={frameClassName}>
+        {/* Preload all images so swipes don't flash the blur placeholder */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none opacity-0">
+          {images.map((img, i) => (
+            i !== index && (
+              <Image
+                key={img.src}
+                src={img.src}
+                alt=""
+                fill
+                sizes="(max-width: 768px) 100vw, 720px"
+                className="object-contain"
+              />
+            )
+          ))}
+        </div>
+
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={index}
@@ -190,13 +206,34 @@ export default function YearInReview() {
     setSelectedId(null);
   }, []);
 
+  const syncHoverToCursor = useCallback(() => {
+    if (isMobile || selectedId) return;
+    const { x, y } = lastMouseRef.current;
+    if (x === 0 && y === 0) return;
+    const el = document.elementFromPoint(x, y);
+    let node: HTMLElement | null = el as HTMLElement | null;
+    while (node) {
+      const idx = node.getAttribute?.('data-card-index');
+      if (idx != null) {
+        const parsed = parseInt(idx, 10);
+        if (!isNaN(parsed)) {
+          setHoveredIndex((prev) => (prev === parsed ? prev : parsed));
+        }
+        return;
+      }
+      node = node.parentElement;
+    }
+    setHoveredIndex((prev) => (prev === null ? prev : null));
+  }, [isMobile, selectedId]);
+
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
     const maxScroll = Math.max(1, scrollWidth - clientWidth);
     setCanScrollLeft(scrollLeft > 5);
     setCanScrollRight(scrollLeft < maxScroll - 5);
-  }, []);
+    syncHoverToCursor();
+  }, [syncHoverToCursor]);
 
   const scrollByCard = useCallback((direction: 'left' | 'right') => {
     const container = scrollRef.current;
@@ -297,7 +334,10 @@ export default function YearInReview() {
         }
         intensities.push(intensity);
       });
-      setCardIntensities(intensities);
+      setCardIntensities((prev) => {
+        const changed = intensities.some((v, i) => Math.abs(v - (prev[i] ?? 0)) > 0.01);
+        return changed ? intensities : prev;
+      });
     };
     const handleScroll = () => requestAnimationFrame(computeIntensities);
     const container = scrollRef.current;
@@ -388,7 +428,7 @@ export default function YearInReview() {
           >
             <div className="flex items-baseline justify-between mb-1">
               <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
-                Washuta Family — Year in Review
+                Year in Review
               </span>
               <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
                 2025
@@ -497,7 +537,8 @@ export default function YearInReview() {
                             isMobile
                               ? {
                                   filter: `grayscale(${1 - (cardIntensities[index] ?? 0)}) brightness(${0.88 + 0.12 * (cardIntensities[index] ?? 0)})`,
-                                  transition: 'filter 0.4s ease-out',
+                                  transition: 'filter 0.2s ease-out',
+                                  willChange: 'filter',
                                 }
                               : {
                                   filter: hoveredIndex === index ? 'none' : 'grayscale(1)',
