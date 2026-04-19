@@ -7,7 +7,6 @@ import { IconExpandSimple } from '@central-icons-react/round-outlined-radius-3-s
 import { IconChevronLeftSmall } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronLeftSmall';
 import { IconChevronRightSmall } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronRightSmall';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCrossMedium';
-import { IconHeart } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconHeart';
 import { useTheme } from 'next-themes';
 import { ThemeToggle } from './ThemeToggle';
 import { YEAR_DATA as ALL_YEAR_DATA } from '../../data/months';
@@ -475,7 +474,7 @@ export default function YearInReview() {
                   aria-label={month.month}
                 >
                   <div
-                    className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden border border-[var(--border-subtle)]"
+                    className="card-surface bg-[var(--bg-secondary)] rounded-xl overflow-hidden"
                   >
                     <div className="h-[44px] flex items-center justify-between px-4 select-none">
                       <motion.span layoutId={`month-label-${month.id}`} className="text-[14px] font-medium text-[var(--text-primary)]">{month.month}</motion.span>
@@ -549,10 +548,20 @@ export default function YearInReview() {
           transition={{ duration: 0.5, delay: 1.3, ease: [0.25, 0.1, 0.25, 1] }}
           className="mx-auto max-w-3xl px-6 md:px-12 pt-16 pb-8"
         >
-          <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)]">
-            <IconHeart size={12} aria-hidden />
-            Made with love in New Mexico
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span
+              className="text-[15px] md:text-[16px] text-[var(--text-muted)]"
+              style={{ fontFamily: 'var(--font-mduixl), Georgia, serif' }}
+            >
+              With love from New Mexico,
+            </span>
+            <span
+              className="text-[22px] leading-none text-[var(--text-secondary)]"
+              style={{ fontFamily: 'var(--font-caveat), "Segoe Script", cursive', letterSpacing: '-0.02em' }}
+            >
+              Andrew, Seneca, Thor &amp; Raya
+            </span>
+          </div>
         </motion.div>
       </main>
 
