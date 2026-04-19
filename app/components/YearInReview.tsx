@@ -38,7 +38,7 @@ function getHoverTransform(index: number, hoveredIndex: number | null, shadowCar
 }
 
 type GalleryCarouselProps = {
-  images: Array<{src: string; caption: string}>;
+  images: Array<{src: string; caption: string; blurDataURL: string}>;
   variant?: 'modal' | 'default';
   onExpandImage?: (url: string) => void;
 };
@@ -104,6 +104,8 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
               sizes="(max-width: 768px) 100vw, 720px"
               className="object-contain"
               priority={index === 0}
+              placeholder="blur"
+              blurDataURL={images[index].blurDataURL}
               draggable={false}
             />
           </motion.div>
@@ -489,6 +491,8 @@ export default function YearInReview() {
                           sizes="(max-width: 768px) 75vw, 260px"
                           className="object-cover"
                           priority={index < 2}
+                          placeholder="blur"
+                          blurDataURL={month.coverBlurDataURL}
                           style={
                             isMobile
                               ? {
