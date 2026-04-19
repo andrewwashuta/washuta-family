@@ -7,6 +7,7 @@ import { IconExpandSimple } from '@central-icons-react/round-outlined-radius-3-s
 import { IconChevronLeftSmall } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronLeftSmall';
 import { IconChevronRightSmall } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronRightSmall';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCrossMedium';
+import { IconHeart } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconHeart';
 import { useTheme } from 'next-themes';
 import { ThemeToggle } from './ThemeToggle';
 import { YEAR_DATA as ALL_YEAR_DATA } from '../../data/months';
@@ -253,7 +254,12 @@ export default function YearInReview() {
   }, []);
 
   useEffect(() => {
-    const handleWindowScroll = () => setHasScrolled(window.scrollY > 10);
+    const handleWindowScroll = () => {
+      setHasScrolled((prev) => {
+        const next = window.scrollY > 10;
+        return prev === next ? prev : next;
+      });
+    };
     window.addEventListener('scroll', handleWindowScroll, { passive: true });
     handleWindowScroll();
     return () => window.removeEventListener('scroll', handleWindowScroll);
@@ -459,9 +465,9 @@ export default function YearInReview() {
                     : { type: 'spring', stiffness: 400, damping: 30 }
                   }
                   style={{ zIndex: transform.zIndex, ...(selectedId === month.id && { opacity: 0 }) }}
-                  onMouseEnter={() => setHoveredIndex(index)}
-                  onMouseMove={() => { if (hoveredIndex !== index && !selectedId) setHoveredIndex(index); }}
-                  onMouseLeave={() => setHoveredIndex(null)}
+                  onMouseEnter={isMobile ? undefined : () => setHoveredIndex(index)}
+                  onMouseMove={isMobile ? undefined : () => { if (hoveredIndex !== index && !selectedId) setHoveredIndex(index); }}
+                  onMouseLeave={isMobile ? undefined : () => setHoveredIndex(null)}
                   onClick={() => { if (!wasDragged.current) setSelectedId(month.id); }}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(month.id); } }}
                   role="button"
@@ -469,7 +475,7 @@ export default function YearInReview() {
                   aria-label={month.month}
                 >
                   <div
-                    className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden"
+                    className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden border border-[var(--border-subtle)]"
                   >
                     <div className="h-[44px] flex items-center justify-between px-4 select-none">
                       <motion.span layoutId={`month-label-${month.id}`} className="text-[14px] font-medium text-[var(--text-primary)]">{month.month}</motion.span>
@@ -543,7 +549,10 @@ export default function YearInReview() {
           transition={{ duration: 0.5, delay: 1.3, ease: [0.25, 0.1, 0.25, 1] }}
           className="mx-auto max-w-3xl px-6 md:px-12 pt-16 pb-8"
         >
-          <span className="text-[15px] text-[var(--text-muted)]">Made with love in New Mexico</span>
+          <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)]">
+            <IconHeart size={12} aria-hidden />
+            Made with love in New Mexico
+          </span>
         </motion.div>
       </main>
 
