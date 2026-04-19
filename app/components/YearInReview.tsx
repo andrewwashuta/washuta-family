@@ -1,11 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CentralIcon } from '@central-icons-react/all';
+import { IconExpandSimple } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconExpandSimple';
+import { IconChevronLeftSmall } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronLeftSmall';
+import { IconChevronRightSmall } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronRightSmall';
+import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCrossMedium';
 import { useTheme } from 'next-themes';
 import { ThemeToggle } from './ThemeToggle';
-import { YEAR_DATA } from '../../data/months';
+import { YEAR_DATA as ALL_YEAR_DATA } from '../../data/months';
+
+const YEAR_DATA = ALL_YEAR_DATA.filter((m) => m.published !== false);
 import { SunlightOverlay } from './SunlightOverlay';
 
 const SHADOW_CARD_LIGHT = '0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02)';
@@ -77,7 +83,7 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
     <div className="w-full">
       <div className={frameClassName}>
         <AnimatePresence mode="wait" custom={direction}>
-          <motion.img
+          <motion.div
             key={index}
             custom={direction}
             variants={variants}
@@ -85,14 +91,22 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
             animate="center"
             exit="exit"
             transition={{ duration: 0.2 }}
-            src={images[index].src}
-            alt={images[index].caption}
-            className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
+            className="absolute inset-0 cursor-grab active:cursor-grabbing"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.2}
             onDragEnd={handleDragEnd}
-          />
+          >
+            <Image
+              src={images[index].src}
+              alt={images[index].caption}
+              fill
+              sizes="(max-width: 768px) 100vw, 720px"
+              className="object-contain"
+              priority={index === 0}
+              draggable={false}
+            />
+          </motion.div>
         </AnimatePresence>
         {variant === 'modal' && onExpandImage && (
           <button
@@ -100,7 +114,7 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
             aria-label="Expand image"
             className={`absolute top-2 right-2 ${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100`}
           >
-            <CentralIcon name="IconExpandSimple" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
+            <IconExpandSimple size={ICON_BUTTON_SIZE} />
           </button>
         )}
       </div>
@@ -116,14 +130,14 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
                 aria-label="Previous image"
                 className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors`}
               >
-                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
+                <IconChevronLeftSmall size={ICON_BUTTON_SIZE} />
               </button>
               <button
                 onClick={next}
                 aria-label="Next image"
                 className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors`}
               >
-                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
+                <IconChevronRightSmall size={ICON_BUTTON_SIZE} />
               </button>
             </div>
           )}
@@ -367,7 +381,7 @@ export default function YearInReview() {
           >
             <div className="flex items-baseline justify-between mb-1">
               <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
-                Washuta Family
+                Washuta Family — Year in Review
               </span>
               <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans">
                 2025
@@ -463,10 +477,13 @@ export default function YearInReview() {
                     </div>
                     <div className="px-3 pb-3">
                       <div className="aspect-[4/5] overflow-hidden rounded-lg relative">
-                        <img
+                        <Image
                           src={month.cover}
                           alt={month.month}
-                          className="w-full h-full object-cover"
+                          fill
+                          sizes="(max-width: 768px) 75vw, 260px"
+                          className="object-cover"
+                          priority={index < 2}
                           style={
                             isMobile
                               ? {
@@ -505,7 +522,7 @@ export default function YearInReview() {
                 aria-label="Scroll left"
                 className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none`}
               >
-                <CentralIcon name="IconChevronLeftSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
+                <IconChevronLeftSmall size={ICON_BUTTON_SIZE} />
               </button>
               <button
                 onClick={() => scrollByCard('right')}
@@ -513,7 +530,7 @@ export default function YearInReview() {
                 aria-label="Scroll right"
                 className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors disabled:opacity-30 disabled:pointer-events-none`}
               >
-                <CentralIcon name="IconChevronRightSmall" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
+                <IconChevronRightSmall size={ICON_BUTTON_SIZE} />
               </button>
             </div>
           </div>
@@ -590,7 +607,7 @@ export default function YearInReview() {
                     aria-label="Close"
                     className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors`}
                   >
-                    <CentralIcon name="IconCrossMedium" join="round" fill="outlined" radius="3" stroke="2" size={ICON_BUTTON_SIZE} />
+                    <IconCrossMedium size={ICON_BUTTON_SIZE} />
                   </button>
               </div>
 

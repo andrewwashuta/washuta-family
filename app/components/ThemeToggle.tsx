@@ -1,17 +1,20 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { CentralIcon } from "@central-icons-react/all";
+import { IconTelevision } from "@central-icons-react/round-outlined-radius-3-stroke-2/IconTelevision";
+import { IconSun } from "@central-icons-react/round-outlined-radius-3-stroke-2/IconSun";
+import { IconMoon } from "@central-icons-react/round-outlined-radius-3-stroke-2/IconMoon";
+import { IconSunrise } from "@central-icons-react/round-outlined-radius-3-stroke-2/IconSunrise";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CYCLE = ["system", "light", "dark", "daylight"] as const;
 
-const iconNames = {
-  system: "IconTelevision",
-  light: "IconSun",
-  dark: "IconMoon",
-  daylight: "IconSunrise",
+const ICONS = {
+  system: IconTelevision,
+  light: IconSun,
+  dark: IconMoon,
+  daylight: IconSunrise,
 } as const;
 
 const labels = {
@@ -36,6 +39,7 @@ export function ThemeToggle() {
   const current = (theme as typeof CYCLE[number]) || "system";
   const nextIndex = (CYCLE.indexOf(current) + 1) % CYCLE.length;
   const next = CYCLE[nextIndex];
+  const Icon = ICONS[current];
 
   return (
     <motion.button
@@ -53,7 +57,7 @@ export function ThemeToggle() {
           transition={{ duration: 0.15, ease: "easeOut" }}
           className="absolute"
         >
-          <CentralIcon name={iconNames[current]} join="round" fill="outlined" radius="3" stroke="1.5" size={16} />
+          <Icon size={16} />
         </motion.span>
       </AnimatePresence>
     </motion.button>
