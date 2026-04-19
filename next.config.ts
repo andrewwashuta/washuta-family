@@ -1,13 +1,10 @@
 import type { NextConfig } from 'next'
 
+const CURRENT_YEAR_PATH = '/2025'
+
 const nextConfig: NextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-      },
-    ],
+  async rewrites() {
+    return [{ source: CURRENT_YEAR_PATH, destination: '/' }]
   },
 }
 
