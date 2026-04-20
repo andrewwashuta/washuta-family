@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IconExpandSimple } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconExpandSimple';
@@ -45,33 +45,37 @@ type GalleryCarouselProps = {
 
 const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCarouselProps) => {
   const [index, setIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
+  const [frameWidth, setFrameWidth] = useState(0);
+  const frameRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const update = () => {
+      if (frameRef.current) setFrameWidth(frameRef.current.offsetWidth);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    if (frameRef.current) ro.observe(frameRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   const next = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setDirection(1);
-    setIndex((prev) => (prev + 1) % images.length);
+    setIndex((prev) => Math.min(prev + 1, images.length - 1));
   };
 
   const prev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setDirection(-1);
-    setIndex((prev) => (prev - 1 + images.length) % images.length);
+    setIndex((prev) => Math.max(prev - 1, 0));
   };
 
-  const handleDragEnd = (e: MouseEvent | TouchEvent | PointerEvent, info: { offset: { x: number } }) => {
-    const threshold = 50;
-    if (info.offset.x < -threshold) {
+  const handleDragEnd = (_e: MouseEvent | TouchEvent | PointerEvent, info: { offset: { x: number }; velocity: { x: number } }) => {
+    const threshold = frameWidth * 0.15;
+    const velocityThreshold = 300;
+    if (info.offset.x < -threshold || info.velocity.x < -velocityThreshold) {
       next();
-    } else if (info.offset.x > threshold) {
+    } else if (info.offset.x > threshold || info.velocity.x > velocityThreshold) {
       prev();
     }
-  };
-
-  const variants = {
-    enter: (dir: number) => ({ x: dir > 0 ? 100 : -100, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir > 0 ? -100 : 100, opacity: 0 }),
   };
 
   const frameClassName =
@@ -81,51 +85,38 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
 
   return (
     <div className="w-full">
-      <div className={frameClassName}>
-        {/* Preload all images so swipes don't flash the blur placeholder */}
-        <div aria-hidden className="absolute inset-0 pointer-events-none opacity-0">
+      <div ref={frameRef} className={frameClassName}>
+        <motion.div
+          className="absolute inset-y-0 left-0 flex cursor-grab active:cursor-grabbing"
+          style={{ width: frameWidth * images.length, willChange: 'transform' }}
+          animate={{ x: -index * frameWidth }}
+          transition={{ type: 'tween', duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          drag="x"
+          dragConstraints={{ left: -(images.length - 1) * frameWidth, right: 0 }}
+          dragElastic={0.15}
+          onDragEnd={handleDragEnd}
+        >
           {images.map((img, i) => (
-            i !== index && (
+            <div
+              key={img.src}
+              className="relative flex-shrink-0 h-full"
+              style={{ width: frameWidth }}
+            >
               <Image
-                key={img.src}
                 src={img.src}
-                alt=""
+                alt={img.caption}
                 fill
                 sizes="(max-width: 768px) 100vw, 720px"
                 className="object-contain"
+                priority={i === 0}
+                loading={i === 0 ? undefined : 'eager'}
+                placeholder="blur"
+                blurDataURL={img.blurDataURL}
+                draggable={false}
               />
-            )
+            </div>
           ))}
-        </div>
-
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={index}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 cursor-grab active:cursor-grabbing"
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={handleDragEnd}
-          >
-            <Image
-              src={images[index].src}
-              alt={images[index].caption}
-              fill
-              sizes="(max-width: 768px) 100vw, 720px"
-              className="object-contain"
-              priority={index === 0}
-              placeholder="blur"
-              blurDataURL={images[index].blurDataURL}
-              draggable={false}
-            />
-          </motion.div>
-        </AnimatePresence>
+        </motion.div>
         {variant === 'modal' && onExpandImage && (
           <button
             onClick={(e) => { e.stopPropagation(); onExpandImage(images[index].src); }}
