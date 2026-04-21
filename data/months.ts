@@ -86,7 +86,8 @@ const METADATA: MonthMeta[] = [
     title: 'Summer energy',
     location: 'Pool & road trips',
     description: 'June was truly a month to remember - it started off by enjoying a great air show on base before we headed out to Alaska! It was so special to celebrate my brother Luke\'s wedding in Barrow, spend time with their beautiful family, and get to see and experience all Barrow and Nalukatuk has to offer! In addition to enjoying Barrow, we also spent time in Anchorage, Whittier, Homer and Seward during our time in Alaska. It was a beautiful and memorable trip, with another highlight being an extraordinary boat cruise through Kenai Fjords National Park. More unbelievable encounters with wildlife such as whales, eagles, and an unforgettable experience to witness an Orca pod hunting a sea lion - like we were National Geographic photographers or living the show Planet Earth for a minute!',
-    published: false,
+    published: true,
+    cover: '/photos/june/2025-06-25_IMG_7447.JPG',
   },
   {
     id: 'july',
@@ -95,7 +96,8 @@ const METADATA: MonthMeta[] = [
     title: 'Big sky days',
     location: 'Lake house',
     description: 'Ok so 2025 sounds amazing so far - a trip to Disney, Hawaii, Alaska, a baby on the way and sure a hernia surgery but sounds mostly great! July really threw us a curveball as I was just entering my second trimester, enjoying reading a book while Thor played with his trucks, Andrew called me from his iWatch on his run and I knew this could not be good. In a total freak accident and another chapter of Andrew\'s geriatric year, he tripped while out running and broke his hip. Of course in the moment, that was the furthest thing on our mind. With the help of some gracious neighbors and a Good Samaritan, Andrew hobbled off of the trail he had been on and we got him to the ER. Much to our surprise, we found out he broke his hip, and nearly all the way through. While waiting in the ER we decided to open our results and found out we were expecting a girl! Grateful for good news on a tough day. Thankful for a successful surgery and for Papa, Lola, and Papa Ken helping carry the load as we navigated this new norm! In total, Andrew would be in the hospital for a week, using a walker without any load bearing on his left side for 6 weeks, followed by slowly learning how to walk again using the walker until he graduated to a cane and eventually walking on his own. If you ever want to be tired, try being pregnant, working, raising a toddler, and a husband who broke his hip! Forever grateful for the support of our friends and family that really showed up for us!',
-    published: false,
+    published: true,
+    cover: '/photos/july/2025-07-12_IMG_0972.HEIC.JPG',
   },
   {
     id: 'august',
@@ -104,7 +106,8 @@ const METADATA: MonthMeta[] = [
     title: 'Road miles',
     location: 'Mountain trip',
     description: 'Another month of just surviving, not necessarily thriving. However, the silver lining was a lot of Thor and Mama time on walks, at the park, and enjoying museums together while Dada sadly stayed home to rest still. Our first outing as a family again was to the library - a short walk inside, chairs available, and entertaining to a toddler lol! We had another fun trip to watch the airplanes at the airport and eat dinner, in the season of getting creative for family time and activities. Seriously, still only surviving because we have the best people caring for us with meals and such - Skadoosh!',
-    published: false,
+    published: true,
+    cover: '/photos/august/2025-08-31_IMG_8449.JPG',
   },
   {
     id: 'september',
@@ -113,7 +116,8 @@ const METADATA: MonthMeta[] = [
     title: 'New routines',
     location: 'School & neighborhood',
     description: 'If you would believe it, we were back in the ER, and they hate to see us coming. Imagine a pregnant lady waddling in with a guy using a walker who has a broken hip, and their toddler whose face is gushing blood - you\'d think this was a joke, but unfortunately it was our reality! Thor braved through the gnarliest black eye ever after getting hit with a chair at daycare and then wiping out and crashing into a cabinet. We vowed to health issues - please! On a brighter note, we had a blast celebrating two weddings this month, and Andrew tried out dancing with a walker! Again, the dance floor hates to see us coming, the pregnant lady and guy on a walker\u2026Thankfully Andrew did graduate to a cane this month, which meant he could finally join a zoo trip again! Our happy place has always been and will always be outside in any form. And we started reshuffling our house around, preparing for Baby Girl\'s arrival, which meant Thor graduated to an awesome big bed!',
-    published: false,
+    published: true,
+    cover: '/photos/september/2025-09-20_IMG_8697.JPG',
   },
   {
     id: 'october',
@@ -122,7 +126,8 @@ const METADATA: MonthMeta[] = [
     title: 'Autumn glow',
     location: 'Pumpkin patch',
     description: 'We had a blast celebrating the Balloon Fiesta (shout out Breaking Wind) first with the Bobola+ crew and then with Papa and Lola. Always a highlight of our Fall and truly when Albuquerque shows off her best! We enjoyed more family time with the Chavez crew with our "mini" reunion. We wrapped up the month with a fun birthday celebration for Thor - he was all about Dinos! Stomp Chomp Roar, we partied like a Dinosaur and then dressed up as Jurassic Park for Halloween including a home made Triceratops costume. Can\'t believe our dude is 3! We finished up the month with more fall things - enjoying the pumpkin patch and Andrew\'s last days of the cane!',
-    published: false,
+    published: true,
+    cover: '/photos/october/2025-10-04_IMG_0237.JPG',
   },
   {
     id: 'november',
@@ -131,7 +136,8 @@ const METADATA: MonthMeta[] = [
     title: 'Gather + savor',
     location: 'Home',
     description: 'November kicked off by celebrating Dia de los Muertos and getting into the home stretch before baby. We were busy getting the house in order, doing maternity pictures, and savoring the final sweet moments with just Thor. Papa and Lola joined us for Thanksgiving (helped us with more house projects omg) and we kicked off the holidays by going to the zoo lights!',
-    published: false,
+    published: true,
+    cover: '/photos/november/2025-11-20_IMG_2464.JPG',
   },
   {
     id: 'december',
@@ -140,7 +146,8 @@ const METADATA: MonthMeta[] = [
     title: 'Lights on',
     location: 'Home',
     description: 'In the final flurry of the year, we enjoyed the gearing up for the holidays, celebrating Andrew\'s birthday and of course anxiously awaiting baby sister. More zoo lights, a very sweet baby sprinkle, time outside, a few last house projects and celebrating Christmas were all much needed distractions in our final days before baby. And suddenly, just like that, Raya joined our family just as it was meant to be!',
-    published: false,
+    published: true,
+    cover: '/photos/december/2025-12-30_RayaNewborn-82.JPG',
   },
 ];
 
