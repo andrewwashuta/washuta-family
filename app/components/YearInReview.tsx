@@ -44,7 +44,11 @@ type GalleryCarouselProps = {
 };
 
 const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCarouselProps) => {
-  const [index, setIndex] = useState(0);
+  const N = images.length;
+  const canLoop = N > 1;
+  // Track slots: 0 = duplicated last, 1..N = real images, N+1 = duplicated first
+  const [slot, setSlot] = useState(canLoop ? 1 : 0);
+  const [animated, setAnimated] = useState(true);
   const [frameWidth, setFrameWidth] = useState(0);
   const frameRef = useRef<HTMLDivElement>(null);
 
@@ -58,14 +62,41 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
     return () => ro.disconnect();
   }, []);
 
+  // After an instant snap back from a virtual edge, re-enable animated transitions
+  // on the next frame so the snap itself stays jump-cut.
+  useLayoutEffect(() => {
+    if (animated) return;
+    const id = requestAnimationFrame(() => setAnimated(true));
+    return () => cancelAnimationFrame(id);
+  }, [animated]);
+
+  const displayIndex =
+    !canLoop ? 0 :
+    slot === 0 ? N - 1 :
+    slot === N + 1 ? 0 :
+    slot - 1;
+
   const next = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setIndex((prev) => Math.min(prev + 1, images.length - 1));
+    setAnimated(true);
+    setSlot((s) => s + 1);
   };
 
   const prev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setIndex((prev) => Math.max(prev - 1, 0));
+    setAnimated(true);
+    setSlot((s) => s - 1);
+  };
+
+  const handleAnimationComplete = () => {
+    if (!canLoop) return;
+    if (slot === 0) {
+      setAnimated(false);
+      setSlot(N);
+    } else if (slot === N + 1) {
+      setAnimated(false);
+      setSlot(1);
+    }
   };
 
   const handleDragEnd = (_e: MouseEvent | TouchEvent | PointerEvent, info: { offset: { x: number }; velocity: { x: number } }) => {
@@ -83,22 +114,26 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
       ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden bg-[var(--image-bg)] rounded-xl group'
       : 'relative w-full aspect-[4/5] overflow-hidden bg-[var(--image-bg)]';
 
+  const trackImages = canLoop ? [images[N - 1], ...images, images[0]] : images;
+  const trackLen = trackImages.length;
+
   return (
     <div className="w-full">
       <div ref={frameRef} className={frameClassName}>
         <motion.div
           className="absolute inset-y-0 left-0 flex cursor-grab active:cursor-grabbing"
-          style={{ width: frameWidth * images.length, willChange: 'transform' }}
-          animate={{ x: -index * frameWidth }}
-          transition={{ type: 'tween', duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          style={{ width: frameWidth * trackLen, willChange: 'transform' }}
+          animate={{ x: -slot * frameWidth }}
+          transition={animated ? { type: 'tween', duration: 0.35, ease: [0.22, 1, 0.36, 1] } : { duration: 0 }}
           drag="x"
-          dragConstraints={{ left: -(images.length - 1) * frameWidth, right: 0 }}
+          dragConstraints={{ left: -(trackLen - 1) * frameWidth, right: 0 }}
           dragElastic={0.15}
           onDragEnd={handleDragEnd}
+          onAnimationComplete={handleAnimationComplete}
         >
-          {images.map((img, i) => (
+          {trackImages.map((img, i) => (
             <div
-              key={img.src}
+              key={`${img.src}-${i}`}
               className="relative flex-shrink-0 h-full"
               style={{ width: frameWidth }}
             >
@@ -108,8 +143,8 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
                 fill
                 sizes="(max-width: 768px) 100vw, 720px"
                 className="object-contain"
-                priority={i === 0}
-                loading={i === 0 ? undefined : 'eager'}
+                priority={i === (canLoop ? 1 : 0)}
+                loading={i === (canLoop ? 1 : 0) ? undefined : 'eager'}
                 placeholder="blur"
                 blurDataURL={img.blurDataURL}
                 draggable={false}
@@ -119,7 +154,7 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
         </motion.div>
         {variant === 'modal' && onExpandImage && (
           <button
-            onClick={(e) => { e.stopPropagation(); onExpandImage(images[index].src); }}
+            onClick={(e) => { e.stopPropagation(); onExpandImage(images[displayIndex].src); }}
             aria-label="Expand image"
             className={`absolute top-2 right-2 ${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100`}
           >
@@ -129,9 +164,9 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
       </div>
 
       <div className={`mt-3 flex items-center gap-2 font-sans text-left ${variant === 'modal' ? 'pl-2' : ''}`} aria-live="polite">
-        <span className="flex-1 min-w-0 text-[13px] text-[var(--text-muted)] truncate text-left">{images[index].caption}</span>
+        <span className="flex-1 min-w-0 text-[13px] text-[var(--text-muted)] truncate text-left">{images[displayIndex].caption}</span>
         <div className="flex-shrink-0 flex items-center gap-4">
-          <span className="text-[13px] text-[var(--text-muted)] opacity-60">{index + 1}/{images.length}</span>
+          <span className="text-[13px] text-[var(--text-muted)] opacity-60">{displayIndex + 1}/{images.length}</span>
           {images.length > 1 && (
             <div className="flex items-center gap-1">
               <button
