@@ -131,26 +131,33 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
           onDragEnd={handleDragEnd}
           onAnimationComplete={handleAnimationComplete}
         >
-          {trackImages.map((img, i) => (
-            <div
-              key={`${img.src}-${i}`}
-              className="relative flex-shrink-0 h-full"
-              style={{ width: frameWidth }}
-            >
-              <Image
-                src={img.src}
-                alt={img.caption}
-                fill
-                sizes="(max-width: 768px) 100vw, 720px"
-                className="object-contain"
-                priority={i === (canLoop ? 1 : 0)}
-                loading={i === (canLoop ? 1 : 0) ? undefined : 'eager'}
-                placeholder="blur"
-                blurDataURL={img.blurDataURL}
-                draggable={false}
-              />
-            </div>
-          ))}
+          {trackImages.map((img, i) => {
+            // Only the visible slide and its immediate neighbors load eagerly.
+            // Everything else stays lazy so opening a 40-photo month doesn't
+            // fire 40 simultaneous image requests — distant slides load as you
+            // navigate toward them.
+            const isNear = Math.abs(i - slot) <= 1;
+            return (
+              <div
+                key={`${img.src}-${i}`}
+                className="relative flex-shrink-0 h-full"
+                style={{ width: frameWidth }}
+              >
+                <Image
+                  src={img.src}
+                  alt={img.caption}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 720px"
+                  className="object-contain"
+                  priority={i === (canLoop ? 1 : 0)}
+                  loading={isNear ? 'eager' : 'lazy'}
+                  placeholder="blur"
+                  blurDataURL={img.blurDataURL}
+                  draggable={false}
+                />
+              </div>
+            );
+          })}
         </motion.div>
         {variant === 'modal' && onExpandImage && (
           <button
@@ -206,8 +213,6 @@ export default function YearInReview() {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [hasScrolled, setHasScrolled] = useState(false);
-  /** Mobile: per-card color intensity 0–1 (scroll-based, smooth falloff so center is 1 and neighbors get a touch) */
-  const [cardIntensities, setCardIntensities] = useState<number[]>(() => YEAR_DATA.map(() => 0));
   const selectedMonth = YEAR_DATA.find((m) => m.id === selectedId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -252,13 +257,21 @@ export default function YearInReview() {
     setHoveredIndex((prev) => (prev === null ? prev : null));
   }, [isMobile, selectedId]);
 
+  const hoverSyncRaf = useRef<number | null>(null);
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
     const maxScroll = Math.max(1, scrollWidth - clientWidth);
     setCanScrollLeft(scrollLeft > 5);
     setCanScrollRight(scrollLeft < maxScroll - 5);
-    syncHoverToCursor();
+    // syncHoverToCursor() does an elementFromPoint hit-test (a forced reflow).
+    // Coalesce to one call per frame so momentum scrolling stays smooth.
+    if (hoverSyncRaf.current == null) {
+      hoverSyncRaf.current = requestAnimationFrame(() => {
+        hoverSyncRaf.current = null;
+        syncHoverToCursor();
+      });
+    }
   }, [syncHoverToCursor]);
 
   const scrollByCard = useCallback((direction: 'left' | 'right') => {
@@ -306,7 +319,10 @@ export default function YearInReview() {
   useEffect(() => {
     handleScroll();
     window.addEventListener('resize', handleScroll);
-    return () => window.removeEventListener('resize', handleScroll);
+    return () => {
+      window.removeEventListener('resize', handleScroll);
+      if (hoverSyncRaf.current != null) cancelAnimationFrame(hoverSyncRaf.current);
+    };
   }, [handleScroll]);
 
   useEffect(() => {
@@ -329,19 +345,22 @@ export default function YearInReview() {
     return () => window.removeEventListener('scroll', handleWindowScroll);
   }, []);
 
-  // Mobile: per-card color intensity (0–1) from distance to viewport center, smooth falloff so center is full color and neighbors get a touch
+  // Mobile: per-card color intensity (0–1) from distance to viewport center,
+  // smooth falloff so center is full color and neighbors get a touch. The
+  // filter is written straight to each cover's DOM node inside the rAF — no
+  // per-frame React state, so scrolling doesn't re-render the whole card list.
+  // The base grayscale + transition live in CSS (.cover-img), so cards still
+  // read correctly before the first frame runs and across unrelated re-renders.
   useEffect(() => {
-    if (!isMobile) {
-      setCardIntensities(YEAR_DATA.map(() => 0));
-      return;
-    }
-    const computeIntensities = () => {
-      const container = scrollRef.current;
-      if (!container) return;
+    if (!isMobile) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    let frame: number | null = null;
+    const applyIntensities = () => {
+      frame = null;
       const cards = container.querySelectorAll('[data-card-index]');
       if (cards.length === 0) return;
       const viewportCenterX = window.innerWidth / 2;
-      const intensities: number[] = [];
       cards.forEach((el) => {
         const rect = (el as HTMLElement).getBoundingClientRect();
         const cardCenterX = rect.left + rect.width / 2;
@@ -358,22 +377,22 @@ export default function YearInReview() {
         } else {
           intensity = 0;
         }
-        intensities.push(intensity);
-      });
-      setCardIntensities((prev) => {
-        const changed = intensities.some((v, i) => Math.abs(v - (prev[i] ?? 0)) > 0.01);
-        return changed ? intensities : prev;
+        const img = (el as HTMLElement).querySelector('img');
+        if (img) {
+          img.style.filter = `grayscale(${1 - intensity}) brightness(${0.88 + 0.12 * intensity})`;
+        }
       });
     };
-    const handleScroll = () => requestAnimationFrame(computeIntensities);
-    const container = scrollRef.current;
-    if (!container) return;
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', computeIntensities);
-    computeIntensities();
+    const onScroll = () => {
+      if (frame == null) frame = requestAnimationFrame(applyIntensities);
+    };
+    container.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    applyIntensities();
     return () => {
-      container.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', computeIntensities);
+      container.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (frame != null) cancelAnimationFrame(frame);
     };
   }, [isMobile]);
 
@@ -521,7 +540,6 @@ export default function YearInReview() {
               return (
                 <motion.div
                   key={month.id}
-                  layout
                   layoutId={`card-${month.id}`}
                   data-card-index={index}
                   className="flex-shrink-0 w-[75vw] md:w-[232px] lg:w-[260px] rounded-xl"
@@ -555,22 +573,14 @@ export default function YearInReview() {
                           alt={month.month}
                           fill
                           sizes="(max-width: 768px) 75vw, 260px"
-                          className="object-cover"
+                          className="object-cover cover-img"
                           priority={index < 2}
                           placeholder="blur"
                           blurDataURL={month.coverBlurDataURL}
-                          style={
-                            isMobile
-                              ? {
-                                  filter: `grayscale(${1 - (cardIntensities[index] ?? 0)}) brightness(${0.88 + 0.12 * (cardIntensities[index] ?? 0)})`,
-                                  transition: 'filter 0.2s ease-out',
-                                  willChange: 'filter',
-                                }
-                              : {
-                                  filter: hoveredIndex === index ? 'none' : 'grayscale(1)',
-                                  transition: 'filter 0.3s ease-out',
-                                }
-                          }
+                          // Desktop: hover drives color via React. Mobile: the base
+                          // grayscale lives in CSS (.cover-img) and the scroll effect
+                          // writes `filter` straight to the DOM, so we leave it unset here.
+                          style={isMobile ? undefined : { filter: hoveredIndex === index ? 'none' : 'grayscale(1)' }}
                           draggable={false}
                         />
                       </div>

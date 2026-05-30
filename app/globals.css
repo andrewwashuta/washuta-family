@@ -129,6 +129,20 @@ body {
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06);
 }
 
+/* Cover photos: desktop sets `filter` inline (hover); mobile leaves it to JS,
+   which writes a scroll-distance-based grayscale straight to the DOM. The base
+   value + transition live here so cards read correctly before/around JS runs
+   without permanently promoting every cover to its own compositor layer. */
+.cover-img {
+  transition: filter 0.3s ease-out;
+}
+@media (max-width: 767px) {
+  .cover-img {
+    filter: grayscale(1) brightness(0.88);
+    transition: filter 0.2s ease-out;
+  }
+}
+
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
