@@ -137,6 +137,7 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
             // fire 40 simultaneous image requests — distant slides load as you
             // navigate toward them.
             const isNear = Math.abs(i - slot) <= 1;
+            const isPriority = i === (canLoop ? 1 : 0);
             return (
               <div
                 key={`${img.src}-${i}`}
@@ -149,8 +150,8 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
                   fill
                   sizes="(max-width: 768px) 100vw, 720px"
                   className="object-contain"
-                  priority={i === (canLoop ? 1 : 0)}
-                  loading={isNear ? 'eager' : 'lazy'}
+                  priority={isPriority}
+                  loading={isPriority ? undefined : isNear ? 'eager' : 'lazy'}
                   placeholder="blur"
                   blurDataURL={img.blurDataURL}
                   draggable={false}
@@ -220,6 +221,10 @@ export default function YearInReview() {
   const dragStartX = useRef(0);
   const dragScrollLeft = useRef(0);
   const wasDragged = useRef(false);
+  const lastDragX = useRef(0);
+  const lastDragT = useRef(0);
+  const dragVelocity = useRef(0);
+  const momentumRaf = useRef<number | null>(null);
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const [hasEntered, setHasEntered] = useState(false);
   useEffect(() => { setHasEntered(true); }, []);
@@ -257,6 +262,13 @@ export default function YearInReview() {
     setHoveredIndex((prev) => (prev === null ? prev : null));
   }, [isMobile, selectedId]);
 
+  const cancelMomentum = useCallback(() => {
+    if (momentumRaf.current != null) {
+      cancelAnimationFrame(momentumRaf.current);
+      momentumRaf.current = null;
+    }
+  }, []);
+
   const hoverSyncRaf = useRef<number | null>(null);
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
@@ -277,6 +289,7 @@ export default function YearInReview() {
   const scrollByCard = useCallback((direction: 'left' | 'right') => {
     const container = scrollRef.current;
     if (!container) return;
+    cancelMomentum();
     const cards = container.querySelectorAll('[data-card-index]');
     if (cards.length === 0) return;
     const first = cards[0] as HTMLElement;
@@ -292,16 +305,52 @@ export default function YearInReview() {
       : Math.max(currentIndex - 1, 0);
     const targetScroll = Math.min(targetIndex * step, maxScroll);
     container.scrollTo({ left: targetScroll, behavior: 'smooth' });
+  }, [cancelMomentum]);
+
+  // After release, glide on the flick velocity with frame-rate-independent
+  // friction, clamping at the scroll bounds. Keeps the drag from stopping dead.
+  const startMomentum = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    // px/ms; ignore slow releases and cap runaway flicks
+    let v = Math.max(-4, Math.min(4, dragVelocity.current));
+    if (Math.abs(v) < 0.02) return;
+    let prevT = performance.now();
+    const maxScroll = container.scrollWidth - container.clientWidth;
+    const step = () => {
+      const now = performance.now();
+      const dt = now - prevT;
+      prevT = now;
+      const next = container.scrollLeft + v * dt;
+      if (next <= 0 || next >= maxScroll) {
+        container.scrollLeft = next <= 0 ? 0 : maxScroll;
+        momentumRaf.current = null;
+        return;
+      }
+      container.scrollLeft = next;
+      v *= Math.pow(0.997, dt); // ~5% of velocity remains after ~1s
+      if (Math.abs(v) < 0.02) {
+        momentumRaf.current = null;
+        return;
+      }
+      momentumRaf.current = requestAnimationFrame(step);
+    };
+    momentumRaf.current = requestAnimationFrame(step);
   }, []);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (isMobile) return;
+    if (isMobile || e.button !== 0) return;
+    cancelMomentum();
     isDragging.current = true;
     wasDragged.current = false;
     dragStartX.current = e.clientX;
     dragScrollLeft.current = scrollRef.current?.scrollLeft ?? 0;
+    lastDragX.current = e.clientX;
+    lastDragT.current = performance.now();
+    dragVelocity.current = 0;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     (e.currentTarget as HTMLElement).style.cursor = 'grabbing';
-  }, [isMobile]);
+  }, [isMobile, cancelMomentum]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!isDragging.current || !scrollRef.current) return;
@@ -309,12 +358,39 @@ export default function YearInReview() {
     const dx = e.clientX - dragStartX.current;
     if (Math.abs(dx) > 5) wasDragged.current = true;
     scrollRef.current.scrollLeft = dragScrollLeft.current - dx;
+    const now = performance.now();
+    const dt = now - lastDragT.current;
+    if (dt > 0) {
+      // scrollLeft moves opposite the pointer; blend to smooth jitter
+      const v = -(e.clientX - lastDragX.current) / dt;
+      dragVelocity.current = dragVelocity.current * 0.7 + v * 0.3;
+      lastDragX.current = e.clientX;
+      lastDragT.current = now;
+    }
   }, []);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current) return;
     isDragging.current = false;
-    (e.currentTarget as HTMLElement).style.cursor = '';
-  }, []);
+    const target = e.currentTarget as HTMLElement;
+    if (target.hasPointerCapture?.(e.pointerId)) target.releasePointerCapture(e.pointerId);
+    target.style.cursor = '';
+    // Pointer capture retargets the synthetic `click` to the container, so the
+    // card's onClick never fires on desktop. Open the tapped card here instead.
+    if (!wasDragged.current) {
+      let node = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+      while (node) {
+        const idx = node.getAttribute?.('data-card-index');
+        if (idx != null) {
+          const index = parseInt(idx, 10);
+          if (!isNaN(index)) setSelectedId(YEAR_DATA[index].id);
+          break;
+        }
+        node = node.parentElement;
+      }
+    }
+    startMomentum();
+  }, [startMomentum]);
 
   useEffect(() => {
     handleScroll();
@@ -322,8 +398,9 @@ export default function YearInReview() {
     return () => {
       window.removeEventListener('resize', handleScroll);
       if (hoverSyncRaf.current != null) cancelAnimationFrame(hoverSyncRaf.current);
+      cancelMomentum();
     };
-  }, [handleScroll]);
+  }, [handleScroll, cancelMomentum]);
 
   useEffect(() => {
     const mql = window.matchMedia('(max-width: 767px)');
@@ -497,7 +574,19 @@ export default function YearInReview() {
             className="text-[15px] md:text-[16px] leading-[1.5] tracking-normal text-[var(--text-secondary)] mt-4 max-w-md"
             style={{ fontFamily: 'var(--font-mduixl), Georgia, serif', fontFeatureSettings: '"ss01"' }}
           >
-            We welcomed Raya Luz Washuta on December 30th and she has been such a light and the sweetest addition to our family. We&apos;ve been soaking up the time all together, and frankly also trying to catch up on life since her arrival!
+            We welcomed{' '}
+            <span
+              style={{
+                fontFamily: 'var(--font-caveat), "Segoe Script", cursive',
+                color: 'var(--accent-pink)',
+                fontSize: '1.35em',
+                lineHeight: 1,
+                letterSpacing: '-0.01em',
+              }}
+            >
+              Raya Luz Washuta
+            </span>{' '}
+            on December 30th and she has been such a light and the sweetest addition to our family. We&apos;ve been soaking up the time all together, and frankly also trying to catch up on life since her arrival!
           </motion.p>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -529,8 +618,8 @@ export default function YearInReview() {
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-            className="flex overflow-x-auto overflow-y-visible scroll-smooth hide-scrollbar gap-4 md:gap-3 py-4 md:py-5 content-gutter-left content-gutter-right md:cursor-grab"
+            onPointerCancel={handlePointerUp}
+            className="flex overflow-x-auto overflow-y-visible hide-scrollbar gap-4 md:gap-3 py-4 md:py-5 content-gutter-left content-gutter-right md:cursor-grab"
             style={{ touchAction: 'pan-x pan-y' }}
             role="region"
             aria-label="Monthly photo cards"
