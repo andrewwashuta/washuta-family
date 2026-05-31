@@ -15,6 +15,8 @@
   --text-secondary: oklch(0.40 0.012 65);
   --text-muted: oklch(0.52 0.010 65);
 
+  --accent-pink: oklch(0.60 0.19 8);
+
   --border-subtle: oklch(0.88 0.005 75);
 
   --overlay-backdrop: oklch(0.985 0.003 75 / 0.9);
@@ -52,9 +54,11 @@
   --bg-secondary: oklch(0.205 0.009 75);
   --bg-elevated: oklch(0.11 0.007 75);
 
-  --text-primary: oklch(0.93 0.007 75);
-  --text-secondary: oklch(0.72 0.010 70);
-  --text-muted: oklch(0.50 0.012 70);
+  --text-primary: oklch(0.94 0.007 75);
+  --text-secondary: oklch(0.78 0.010 70);
+  --text-muted: oklch(0.62 0.012 70);
+
+  --accent-pink: oklch(0.82 0.13 8);
 
   --border-subtle: oklch(0.32 0.006 75);
 
@@ -97,6 +101,8 @@
   --text-secondary: theme('colors.stone.500');
   --text-muted: theme('colors.stone.400');
 
+  --accent-pink: oklch(0.62 0.18 10);
+
   --border-subtle: theme('colors.stone.200');
 
   --overlay-backdrop: rgba(255, 255, 255, 0.9);
@@ -129,6 +135,16 @@ body {
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06);
 }
 
+.cover-img {
+  transition: filter 0.3s ease-out;
+}
+@media (max-width: 767px) {
+  .cover-img {
+    filter: grayscale(1) brightness(0.88);
+    transition: filter 0.2s ease-out;
+  }
+}
+
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -151,6 +167,42 @@ body {
 .description-scroll::-webkit-scrollbar-thumb {
   background: var(--border-subtle);
   border-radius: 4px;
+}
+
+/*
+ * Scroll mask — fades the top/bottom edges of a scrolling column as content runs
+ * past them, driven entirely by scroll position (no JS). Technique: twilson/scroll-mask.
+ * Used on the month description in the popover: the top edge fades only once you've
+ * scrolled down, the bottom edge fades while there's more text below. Gracefully
+ * no-ops where scroll-driven animations aren't supported, and the timeline is
+ * inactive (no fade) when the text fits without scrolling.
+ *
+ * Each --*-from custom property is the gradient stop where the solid region ends;
+ * the keyframes animate it between 100% (no fade) and the configured fade-from value
+ * depending on how far the edge is from the scroll start/end.
+ */
+@property --scroll-mask-t-from { syntax: "<length-percentage>"; inherits: false; initial-value: 100%; }
+@property --scroll-mask-b-from { syntax: "<length-percentage>"; inherits: false; initial-value: 100%; }
+
+@keyframes scroll-mask-y-scroll {
+  0% { --scroll-mask-t-from: 100%; }
+  10%, 100% { --scroll-mask-t-from: var(--scroll-mask-fade-from-t, 100%); }
+  0%, 90% { --scroll-mask-b-from: var(--scroll-mask-fade-from-b, 100%); }
+  100% { --scroll-mask-b-from: 100%; }
+}
+
+@supports (animation-timeline: scroll()) {
+  .scroll-mask-y {
+    --scroll-mask-fade-from-t: 86%;
+    --scroll-mask-fade-from-b: 86%;
+    mask-image:
+      linear-gradient(to top, black, black var(--scroll-mask-t-from), transparent),
+      linear-gradient(to bottom, black, black var(--scroll-mask-b-from), transparent);
+    mask-composite: intersect;
+    -webkit-mask-composite: source-in;
+    animation: scroll-mask-y-scroll linear;
+    animation-timeline: scroll(self block);
+  }
 }
 
 /* Use 100% (content width) not 100vw so alignment matches header centering; 100vw includes scrollbar */
