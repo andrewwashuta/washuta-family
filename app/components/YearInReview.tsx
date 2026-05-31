@@ -37,6 +37,10 @@ function getHoverTransform(index: number, hoveredIndex: number | null, shadowCar
   return { y: 0, scale: 1, zIndex: index, boxShadow: shadowCard };
 }
 
+function wrapIndex(index: number, length: number) {
+  return ((index % length) + length) % length;
+}
+
 type GalleryCarouselProps = {
   images: Array<{src: string; caption: string; blurDataURL: string}>;
   variant?: 'modal' | 'default';
@@ -46,15 +50,22 @@ type GalleryCarouselProps = {
 const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCarouselProps) => {
   const N = images.length;
   const canLoop = N > 1;
-  // Track slots: 0 = duplicated last, 1..N = real images, N+1 = duplicated first
-  const [slot, setSlot] = useState(canLoop ? 1 : 0);
+  const [displayIndex, setDisplayIndex] = useState(0);
+  const [trackOffset, setTrackOffset] = useState(0);
   const [animated, setAnimated] = useState(true);
   const [frameWidth, setFrameWidth] = useState(0);
   const frameRef = useRef<HTMLDivElement>(null);
+  const hasMeasuredFrame = useRef(false);
 
   useLayoutEffect(() => {
     const update = () => {
-      if (frameRef.current) setFrameWidth(frameRef.current.offsetWidth);
+      if (!frameRef.current) return;
+      const nextWidth = frameRef.current.offsetWidth;
+      if (!hasMeasuredFrame.current && nextWidth > 0) {
+        hasMeasuredFrame.current = true;
+        setAnimated(false);
+      }
+      setFrameWidth(nextWidth);
     };
     update();
     const ro = new ResizeObserver(update);
@@ -70,42 +81,39 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
     return () => cancelAnimationFrame(id);
   }, [animated]);
 
-  const displayIndex =
-    !canLoop ? 0 :
-    slot === 0 ? N - 1 :
-    slot === N + 1 ? 0 :
-    slot - 1;
+  const move = useCallback((direction: -1 | 1, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!canLoop || trackOffset !== 0) return;
+    setAnimated(true);
+    setTrackOffset(direction);
+  }, [canLoop, trackOffset]);
 
   const next = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setAnimated(true);
-    setSlot((s) => s + 1);
+    move(1, e);
   };
 
   const prev = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setAnimated(true);
-    setSlot((s) => s - 1);
+    move(-1, e);
   };
 
   const handleAnimationComplete = () => {
-    if (!canLoop) return;
-    if (slot === 0) {
-      setAnimated(false);
-      setSlot(N);
-    } else if (slot === N + 1) {
-      setAnimated(false);
-      setSlot(1);
-    }
+    if (!canLoop || trackOffset === 0) return;
+    setDisplayIndex((index) => wrapIndex(index + trackOffset, N));
+    setAnimated(false);
+    setTrackOffset(0);
   };
 
   const handleDragEnd = (_e: MouseEvent | TouchEvent | PointerEvent, info: { offset: { x: number }; velocity: { x: number } }) => {
+    if (!canLoop) return;
     const threshold = frameWidth * 0.15;
     const velocityThreshold = 300;
     if (info.offset.x < -threshold || info.velocity.x < -velocityThreshold) {
-      next();
+      move(1);
     } else if (info.offset.x > threshold || info.velocity.x > velocityThreshold) {
-      prev();
+      move(-1);
+    } else {
+      setAnimated(true);
+      setTrackOffset(0);
     }
   };
 
@@ -114,42 +122,48 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
       ? 'relative w-full h-[42vh] min-h-[280px] max-h-[460px] overflow-hidden bg-[var(--image-bg)] rounded-xl group'
       : 'relative w-full aspect-[4/5] overflow-hidden bg-[var(--image-bg)]';
 
-  const trackImages = canLoop ? [images[N - 1], ...images, images[0]] : images;
-  const trackLen = trackImages.length;
+  const visibleSlides = canLoop
+    ? [-1, 0, 1].map((offset) => {
+        const index = wrapIndex(displayIndex + offset, N);
+        return { offset, index, image: images[index] };
+      })
+    : [{ offset: 0, index: displayIndex, image: images[displayIndex] }];
+  const trackLen = visibleSlides.length;
+  const trackX = canLoop ? -(1 + trackOffset) * frameWidth : 0;
 
   return (
     <div className="w-full">
       <div ref={frameRef} className={frameClassName}>
         <motion.div
           className="absolute inset-y-0 left-0 flex cursor-grab active:cursor-grabbing"
-          style={{ width: frameWidth * trackLen, willChange: 'transform' }}
-          animate={{ x: -slot * frameWidth }}
+          style={{ width: frameWidth * trackLen }}
+          initial={false}
+          animate={{ x: trackX }}
           transition={animated ? { type: 'tween', duration: 0.35, ease: [0.22, 1, 0.36, 1] } : { duration: 0 }}
-          drag="x"
-          dragConstraints={{ left: -(trackLen - 1) * frameWidth, right: 0 }}
+          drag={canLoop ? 'x' : false}
+          dragConstraints={canLoop ? { left: -2 * frameWidth, right: 0 } : { left: 0, right: 0 }}
           dragElastic={0.15}
           onDragEnd={handleDragEnd}
           onAnimationComplete={handleAnimationComplete}
         >
-          {trackImages.map((img, i) => {
-            const isNear = Math.abs(i - slot) <= 1;
-            const isPriority = i === (canLoop ? 1 : 0);
+          {visibleSlides.map(({ offset, index, image }) => {
+            const isPriority = offset === 0 && index === 0;
             return (
               <div
-                key={`${img.src}-${i}`}
+                key={`${offset}-${image.src}`}
                 className="relative flex-shrink-0 h-full"
                 style={{ width: frameWidth }}
               >
                 <Image
-                  src={img.src}
-                  alt={img.caption}
+                  src={image.src}
+                  alt={image.caption}
                   fill
                   sizes="(max-width: 768px) 100vw, 720px"
                   className="object-contain"
                   priority={isPriority}
-                  loading={isPriority ? undefined : isNear ? 'eager' : 'lazy'}
+                  loading={isPriority ? undefined : 'eager'}
                   placeholder="blur"
-                  blurDataURL={img.blurDataURL}
+                  blurDataURL={image.blurDataURL}
                   draggable={false}
                 />
               </div>
@@ -840,7 +854,12 @@ export default function YearInReview() {
                   transition={{ delay: 0.15, duration: 0.3, ease: 'easeOut' }}
                   className="px-3"
                 >
-                  <GalleryCarousel images={selectedMonth.gallery} variant="modal" onExpandImage={(url) => setExpandedImageUrl(url)} />
+                  <GalleryCarousel
+                    key={selectedMonth.id}
+                    images={selectedMonth.gallery}
+                    variant="modal"
+                    onExpandImage={(url) => setExpandedImageUrl(url)}
+                  />
                 </motion.div>
               </div>
 
