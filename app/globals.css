@@ -15,6 +15,9 @@
   --text-secondary: oklch(0.40 0.012 65);
   --text-muted: oklch(0.52 0.010 65);
 
+  /* Accent — rose-pink for highlighting Raya's name; tuned per theme for legibility */
+  --accent-pink: oklch(0.60 0.19 8);
+
   --border-subtle: oklch(0.88 0.005 75);
 
   --overlay-backdrop: oklch(0.985 0.003 75 / 0.9);
@@ -56,6 +59,9 @@
   --text-secondary: oklch(0.72 0.010 70);
   --text-muted: oklch(0.50 0.012 70);
 
+  /* Brighter, softer pink so it pops against the dark page */
+  --accent-pink: oklch(0.82 0.13 8);
+
   --border-subtle: oklch(0.32 0.006 75);
 
   --overlay-backdrop: oklch(0.075 0.005 75 / 0.9);
@@ -96,6 +102,9 @@
   --text-primary: theme('colors.stone.900');
   --text-secondary: theme('colors.stone.500');
   --text-muted: theme('colors.stone.400');
+
+  /* Warm rose on the cream daylight background */
+  --accent-pink: oklch(0.62 0.18 10);
 
   --border-subtle: theme('colors.stone.200');
 
