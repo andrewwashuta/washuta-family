@@ -26,20 +26,21 @@
   --bg-elevated-fade-40: oklch(1 0 0 / 0.4);
   --bg-elevated-fade-75: oklch(1 0 0 / 0.75);
 
-  /* Shadow system — warm multi-layer, geometric blur progression */
+  /* Shadow system — warm multi-layer, geometric blur progression.
+     Resting and hover share a 5-layer structure so box-shadow transitions
+     smoothly between them (CSS only interpolates equal-length shadow lists). */
   --shadow-card:
-    0px 0.5px 0.7px oklch(0.30 0.01 75 / 0.07),
-    0px 1.1px 1.5px oklch(0.30 0.01 75 / 0.07),
-    0px 2.7px 3.8px oklch(0.30 0.01 75 / 0.07);
+    0px 0.5px 0.7px oklch(0.30 0.01 75 / 0.05),
+    0px 1.1px 1.5px -0.4px oklch(0.30 0.01 75 / 0.045),
+    0px 2px 2.6px -0.9px oklch(0.30 0.01 75 / 0.04),
+    0px 3.2px 4px -1.3px oklch(0.30 0.01 75 / 0.03),
+    0px 4.5px 5.6px -1.8px oklch(0.30 0.01 75 / 0.02);
   --shadow-card-hover:
     0px 0.5px 0.6px oklch(0.30 0.01 75 / 0.06),
     0px 1.2px 1.4px -0.8px oklch(0.30 0.01 75 / 0.06),
     0px 2.8px 3.2px -1.5px oklch(0.30 0.01 75 / 0.06),
     0px 5.5px 6.3px -2.3px oklch(0.30 0.01 75 / 0.06),
     0px 10px 11.4px -3px oklch(0.30 0.01 75 / 0.06);
-  --shadow-card-stack:
-    0px 0.3px 0.5px oklch(0.30 0.01 75 / 0.05),
-    0px 0.8px 1.2px oklch(0.30 0.01 75 / 0.04);
   --shadow-modal:
     0px 0.5px 0.7px oklch(0.30 0.01 75 / 0.05),
     0px 1.6px 2px -0.4px oklch(0.30 0.01 75 / 0.05),
@@ -70,20 +71,20 @@
   --bg-elevated-fade-40: oklch(0.075 0.005 75 / 0.4);
   --bg-elevated-fade-75: oklch(0.075 0.005 75 / 0.75);
 
-  /* Shadow system — dark mode, multi-layer with tapering opacity */
+  /* Shadow system — dark mode, multi-layer with tapering opacity.
+     Resting/hover share a 5-layer structure for smooth box-shadow transitions. */
   --shadow-card:
-    0px 0.5px 0.7px oklch(0 0 0 / 0.25),
-    0px 1.1px 1.5px oklch(0 0 0 / 0.22),
-    0px 2.7px 3.8px oklch(0 0 0 / 0.18);
+    0px 0.5px 0.7px oklch(0 0 0 / 0.22),
+    0px 1.1px 1.5px -0.4px oklch(0 0 0 / 0.20),
+    0px 2px 2.6px -0.9px oklch(0 0 0 / 0.18),
+    0px 3.2px 4px -1.3px oklch(0 0 0 / 0.14),
+    0px 4.5px 5.6px -1.8px oklch(0 0 0 / 0.10);
   --shadow-card-hover:
     0px 0.5px 0.6px oklch(0 0 0 / 0.22),
     0px 1.2px 1.4px -0.8px oklch(0 0 0 / 0.20),
     0px 2.8px 3.2px -1.5px oklch(0 0 0 / 0.18),
     0px 5.5px 6.3px -2.3px oklch(0 0 0 / 0.16),
     0px 10px 11.4px -3px oklch(0 0 0 / 0.14);
-  --shadow-card-stack:
-    0px 0.3px 0.5px oklch(0 0 0 / 0.18),
-    0px 0.8px 1.2px oklch(0 0 0 / 0.14);
   --shadow-modal:
     0px 0.5px 0.7px oklch(0 0 0 / 0.18),
     0px 1.6px 2px -0.4px oklch(0 0 0 / 0.17),
@@ -114,10 +115,27 @@
   --bg-elevated-fade-40: rgba(254, 252, 248, 0.4);
   --bg-elevated-fade-75: rgba(254, 252, 248, 0.75);
 
-  --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02);
-  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-card-stack: 0 1px 2px rgba(0,0,0,0.03);
-  --shadow-modal: 0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  /* Shadow system — warm multi-layer, matched to the cream daylight surface */
+  --shadow-card:
+    0px 0.5px 0.7px oklch(0.30 0.01 75 / 0.05),
+    0px 1.1px 1.5px -0.4px oklch(0.30 0.01 75 / 0.045),
+    0px 2px 2.6px -0.9px oklch(0.30 0.01 75 / 0.04),
+    0px 3.2px 4px -1.3px oklch(0.30 0.01 75 / 0.03),
+    0px 4.5px 5.6px -1.8px oklch(0.30 0.01 75 / 0.02);
+  --shadow-card-hover:
+    0px 0.5px 0.6px oklch(0.30 0.01 75 / 0.06),
+    0px 1.2px 1.4px -0.8px oklch(0.30 0.01 75 / 0.06),
+    0px 2.8px 3.2px -1.5px oklch(0.30 0.01 75 / 0.06),
+    0px 5.5px 6.3px -2.3px oklch(0.30 0.01 75 / 0.06),
+    0px 10px 11.4px -3px oklch(0.30 0.01 75 / 0.06);
+  --shadow-modal:
+    0px 0.5px 0.7px oklch(0.30 0.01 75 / 0.05),
+    0px 1.6px 2px -0.4px oklch(0.30 0.01 75 / 0.05),
+    0px 3px 3.8px -0.8px oklch(0.30 0.01 75 / 0.05),
+    0px 5.3px 6.7px -1.2px oklch(0.30 0.01 75 / 0.05),
+    0px 9.3px 11.7px -1.6px oklch(0.30 0.01 75 / 0.05),
+    0px 16px 20.1px -2px oklch(0.30 0.01 75 / 0.05),
+    0px 27px 34px -2.5px oklch(0.30 0.01 75 / 0.05);
 }
 
 

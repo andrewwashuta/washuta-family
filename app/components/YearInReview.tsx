@@ -14,27 +14,17 @@ import { YEAR_DATA as ALL_YEAR_DATA } from '../../data/months';
 const YEAR_DATA = ALL_YEAR_DATA.filter((m) => m.published !== false);
 import { SunlightOverlay } from './SunlightOverlay';
 
-const SHADOW_CARD_LIGHT = '0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02)';
-const SHADOW_CARD_DARK = '0 1px 2px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.15)';
-const SHADOW_CARD_HOVER_LIGHT = '0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04)';
-const SHADOW_CARD_HOVER_DARK = '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)';
-const SHADOW_MODAL_LIGHT = '0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)';
-const SHADOW_MODAL_DARK = '0 8px 30px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25)';
-
 /** Shared icon button sizing — X, arrows, expand */
 const ICON_BUTTON_PADDING = 'p-1.5';
 const ICON_BUTTON_ROUNDED = 'rounded-lg';
 const ICON_BUTTON_SIZE = 18;
 
 
-function getHoverTransform(index: number, hoveredIndex: number | null, shadowCard: string, shadowCardHover: string) {
-  if (hoveredIndex === null) {
-    return { y: 0, scale: 1, zIndex: index, boxShadow: shadowCard };
-  }
+function getHoverTransform(index: number, hoveredIndex: number | null) {
   if (index === hoveredIndex) {
-    return { y: -6, scale: 1.02, zIndex: 50, boxShadow: shadowCardHover };
+    return { y: -6, scale: 1.02, zIndex: 50 };
   }
-  return { y: 0, scale: 1, zIndex: index, boxShadow: shadowCard };
+  return { y: 0, scale: 1, zIndex: index };
 }
 
 type GalleryCarouselProps = {
@@ -201,11 +191,7 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
 
 
 export default function YearInReview() {
-  const { resolvedTheme, theme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-  const shadowCard = isDark ? SHADOW_CARD_DARK : SHADOW_CARD_LIGHT;
-  const shadowCardHover = isDark ? SHADOW_CARD_HOVER_DARK : SHADOW_CARD_HOVER_LIGHT;
-  const shadowModal = isDark ? SHADOW_MODAL_DARK : SHADOW_MODAL_LIGHT;
+  const { theme } = useTheme();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [expandedImageUrl, setExpandedImageUrl] = useState<string | null>(null);
@@ -228,13 +214,6 @@ export default function YearInReview() {
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const [hasEntered, setHasEntered] = useState(false);
   useEffect(() => { setHasEntered(true); }, []);
-
-  // Freeze shadow values when modal opens so theme switch during layout animation doesn't cause a glitch
-  const frozenShadowsRef = useRef({ card: shadowCard, cardHover: shadowCardHover, modal: shadowModal });
-  if (!selectedId) {
-    frozenShadowsRef.current = { card: shadowCard, cardHover: shadowCardHover, modal: shadowModal };
-  }
-  const shadows = selectedId ? frozenShadowsRef.current : { card: shadowCard, cardHover: shadowCardHover, modal: shadowModal };
 
   const closeModal = useCallback(() => {
     setExpandedImageUrl(null);
@@ -625,20 +604,27 @@ export default function YearInReview() {
             aria-label="Monthly photo cards"
           >
             {YEAR_DATA.map((month, index) => {
-              const transform = getHoverTransform(index, hoveredIndex, shadows.card, shadows.cardHover);
+              const transform = getHoverTransform(index, hoveredIndex);
               return (
                 <motion.div
                   key={month.id}
                   layoutId={`card-${month.id}`}
                   data-card-index={index}
-                  className="flex-shrink-0 w-[75vw] md:w-[232px] lg:w-[260px] rounded-xl"
+                  // box-shadow is driven by the theme-aware CSS vars (incl. daylight)
+                  // and animated via the `transition-shadow` class, so it stays out
+                  // of framer's per-frame animation work.
+                  className="flex-shrink-0 w-[75vw] md:w-[232px] lg:w-[260px] rounded-xl transition-shadow duration-300 ease-out"
                   {...(!hasEntered && { initial: { opacity: 0, y: 20 } })}
-                  animate={{ opacity: 1, y: transform.y, scale: transform.scale, boxShadow: transform.boxShadow }}
+                  animate={{ opacity: 1, y: transform.y, scale: transform.scale }}
                   transition={!hasEntered
                     ? { duration: 0.5, delay: 0.6 + index * 0.06, ease: [0.25, 0.1, 0.25, 1] }
                     : { type: 'spring', stiffness: 400, damping: 30 }
                   }
-                  style={{ zIndex: transform.zIndex, ...(selectedId === month.id && { opacity: 0 }) }}
+                  style={{
+                    zIndex: transform.zIndex,
+                    boxShadow: hoveredIndex === index ? 'var(--shadow-card-hover)' : 'var(--shadow-card)',
+                    ...(selectedId === month.id && { opacity: 0 }),
+                  }}
                   onMouseEnter={isMobile ? undefined : () => setHoveredIndex(index)}
                   onMouseMove={isMobile ? undefined : () => { if (hoveredIndex !== index && !selectedId) setHoveredIndex(index); }}
                   onMouseLeave={isMobile ? undefined : () => setHoveredIndex(null)}
@@ -744,19 +730,30 @@ export default function YearInReview() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/95"
+            className="fixed inset-0 z-[60] p-4 md:p-8 bg-black/95"
             onClick={() => setExpandedImageUrl(null)}
             role="button"
             tabIndex={0}
             aria-label="Close expanded image"
             onKeyDown={(e) => { if (e.key === 'Escape') setExpandedImageUrl(null); }}
           >
-            <img
-              src={expandedImageUrl}
-              alt="Expanded view"
-              className="max-w-full max-h-full object-contain"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <div className="relative w-full h-full">
+              {(() => {
+                const blur = selectedMonth?.gallery.find((g) => g.src === expandedImageUrl)?.blurDataURL;
+                return (
+                  <Image
+                    src={expandedImageUrl}
+                    alt="Expanded view"
+                    fill
+                    sizes="100vw"
+                    quality={90}
+                    className="object-contain"
+                    {...(blur ? { placeholder: 'blur' as const, blurDataURL: blur } : {})}
+                    draggable={false}
+                  />
+                );
+              })()}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -777,11 +774,11 @@ export default function YearInReview() {
             <motion.div
               layout
               layoutId={`card-${selectedId}`}
-              animate={{ boxShadow: shadows.modal }}
               transition={{ type: 'spring', stiffness: 400, damping: 35 }}
               role="dialog"
               aria-modal="true"
               aria-label={`${selectedMonth.month} ${selectedMonth.year}`}
+              style={{ boxShadow: 'var(--shadow-modal)' }}
               className="relative w-full max-w-lg md:max-w-[720px] max-h-[86vh] md:max-h-[88vh] bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden flex flex-col"
             >
               {/* Header */}

@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   images: {
     // AVIF first (≈20-30% smaller than WebP) with WebP fallback.
     formats: ['image/avif', 'image/webp'],
+    // 75 (Next's default) for thumbnails/carousel; 90 for the fullscreen expand.
+    qualities: [75, 90],
     // Source photos top out at 1440px on the long edge, so there is no point
     // generating larger candidates. Trimming the default ladders keeps the
     // optimizer from emitting (and caching) variants we never request.
