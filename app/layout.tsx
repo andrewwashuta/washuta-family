@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { Caveat } from 'next/font/google'
 import './globals.css'
@@ -64,6 +64,15 @@ export const metadata: Metadata = {
       noimageindex: true,
     },
   },
+}
+
+export const viewport: Viewport = {
+  // Tints mobile browser chrome to match --bg-primary on first paint;
+  // ThemeProvider keeps it in sync when the theme is toggled at runtime.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fbfaf8' },
+    { media: '(prefers-color-scheme: dark)', color: '#020101' },
+  ],
 }
 
 export default function RootLayout({

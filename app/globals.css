@@ -118,6 +118,10 @@
 }
 
 
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   font-family: var(--font-mdui), Georgia, "Times New Roman", serif;
   letter-spacing: -0.02em;
@@ -138,11 +142,21 @@ body {
 .cover-img {
   transition: filter 0.3s ease-out;
 }
-@media (max-width: 767px) {
-  .cover-img {
-    filter: grayscale(1) brightness(0.88);
-    transition: filter 0.2s ease-out;
-  }
+
+/* Eased top-of-page fade — multi-stop gradient approximating an ease-out curve so
+ * there's no visible hard edge where the fade ends. No backdrop-filter: masked
+ * blur banded badly on mobile Safari and cost a full-layer blur every frame. */
+.top-fade {
+  background: linear-gradient(
+    to bottom,
+    var(--bg-primary) 0%,
+    color-mix(in srgb, var(--bg-primary) 87%, transparent) 22%,
+    color-mix(in srgb, var(--bg-primary) 64%, transparent) 42%,
+    color-mix(in srgb, var(--bg-primary) 38%, transparent) 60%,
+    color-mix(in srgb, var(--bg-primary) 16%, transparent) 77%,
+    color-mix(in srgb, var(--bg-primary) 4%, transparent) 90%,
+    transparent 100%
+  );
 }
 
 .hide-scrollbar {
