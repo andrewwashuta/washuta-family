@@ -174,7 +174,7 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
           <button
             onClick={(e) => { e.stopPropagation(); onExpandImage(images[displayIndex].src); }}
             aria-label="Expand image"
-            className={`absolute top-2 right-2 ${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100`}
+            className={`absolute top-2 right-2 ${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} bg-black/30 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/50 transition-all md:opacity-0 md:group-hover:opacity-100`}
           >
             <IconExpandSimple size={ICON_BUTTON_SIZE} />
           </button>
@@ -247,20 +247,6 @@ export default function YearInReview() {
   }
   const shadows = selectedId ? frozenShadowsRef.current : { card: shadowCard, cardHover: shadowCardHover, modal: shadowModal };
 
-  // Edge fade for the card row. Driven by the scroll state we already track, so the
-  // mask only changes when an edge is reached (canScroll* flips) — the rest of the
-  // time it's a fixed mask the scrolling content composites under, costing nothing
-  // per frame and never fighting the momentum glide. Fades the leading edge only once
-  // scrolled and the trailing edge only while there's more to reveal. The gradient is
-  // uniform along Y, so card hover-lift and shadows are never clipped.
-  const FADE = '44px';
-  const cardRowMask = (() => {
-    if (!canScrollLeft && !canScrollRight) return undefined;
-    const left = canScrollLeft ? `transparent 0, #000 ${FADE}` : '#000 0';
-    const right = canScrollRight ? `#000 calc(100% - ${FADE}), transparent 100%` : '#000 100%';
-    return `linear-gradient(to right, ${left}, ${right})`;
-  })();
-
   const closeModal = useCallback(() => {
     setExpandedImageUrl(null);
     setDescriptionExpanded(false);
@@ -301,14 +287,15 @@ export default function YearInReview() {
     setCanScrollLeft(scrollLeft > 5);
     setCanScrollRight(scrollLeft < maxScroll - 5);
     // syncHoverToCursor() does an elementFromPoint hit-test (a forced reflow).
-    // Coalesce to one call per frame so momentum scrolling stays smooth.
-    if (hoverSyncRaf.current == null) {
+    // Coalesce to one call per frame so momentum scrolling stays smooth, and skip
+    // it entirely on touch devices where there's no hover to sync.
+    if (!isMobile && hoverSyncRaf.current == null) {
       hoverSyncRaf.current = requestAnimationFrame(() => {
         hoverSyncRaf.current = null;
         syncHoverToCursor();
       });
     }
-  }, [syncHoverToCursor]);
+  }, [isMobile, syncHoverToCursor]);
 
   const scrollByCard = useCallback((direction: 'left' | 'right') => {
     const container = scrollRef.current;
@@ -446,53 +433,6 @@ export default function YearInReview() {
     return () => window.removeEventListener('scroll', handleWindowScroll);
   }, []);
 
-  // Mobile cover color is written directly to each image so scrolling does not
-  // re-render the full card list on every frame.
-  useEffect(() => {
-    if (!isMobile) return;
-    const container = scrollRef.current;
-    if (!container) return;
-    let frame: number | null = null;
-    const applyIntensities = () => {
-      frame = null;
-      const cards = container.querySelectorAll('[data-card-index]');
-      if (cards.length === 0) return;
-      const viewportCenterX = window.innerWidth / 2;
-      cards.forEach((el) => {
-        const rect = (el as HTMLElement).getBoundingClientRect();
-        const cardCenterX = rect.left + rect.width / 2;
-        const distance = Math.abs(viewportCenterX - cardCenterX);
-        const cardWidth = rect.width;
-        // Full color when well centered; smooth falloff so neighbors get ~0.2–0.35 at their near edge
-        const peakWidth = cardWidth * 0.45;
-        const falloffWidth = cardWidth * 0.9;
-        let intensity: number;
-        if (distance <= peakWidth) {
-          intensity = 1;
-        } else if (distance <= peakWidth + falloffWidth) {
-          intensity = Math.max(0, 1 - (distance - peakWidth) / falloffWidth * 0.85);
-        } else {
-          intensity = 0;
-        }
-        const img = (el as HTMLElement).querySelector('img');
-        if (img) {
-          img.style.filter = `grayscale(${1 - intensity}) brightness(${0.88 + 0.12 * intensity})`;
-        }
-      });
-    };
-    const handleScroll = () => {
-      if (frame == null) frame = requestAnimationFrame(applyIntensities);
-    };
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll);
-    applyIntensities();
-    return () => {
-      container.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
-      if (frame != null) cancelAnimationFrame(frame);
-    };
-  }, [isMobile]);
-
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       lastMouseRef.current = { x: e.clientX, y: e.clientY };
@@ -538,24 +478,13 @@ export default function YearInReview() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors duration-300">
 
-      <SunlightOverlay active={theme === 'daylight'} />
+      {/* Looping blend-mode video is too costly on phones — daylight overlay is desktop-only */}
+      <SunlightOverlay active={theme === 'daylight' && !isMobile} />
 
       <div
-        className="fixed top-0 left-0 right-0 z-30 h-16 pointer-events-none transition-opacity duration-300"
+        className="top-fade fixed top-0 left-0 right-0 z-30 h-20 pointer-events-none transition-opacity duration-300"
         style={{ opacity: hasScrolled ? 1 : 0 }}
-      >
-        <div
-          className="absolute inset-0 backdrop-blur-sm"
-          style={{
-            maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
-          }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(to bottom, var(--bg-primary) 0%, transparent 100%)' }}
-        />
-      </div>
+      />
 
       <div className="fixed top-6 right-6 z-40">
         <ThemeToggle />
@@ -625,7 +554,7 @@ export default function YearInReview() {
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
             className="inline-block text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)] font-sans mb-4"
           >
             Month by month
@@ -640,7 +569,7 @@ export default function YearInReview() {
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
             className="flex overflow-x-auto overflow-y-visible hide-scrollbar gap-4 md:gap-3 py-4 md:py-5 content-gutter-left content-gutter-right md:cursor-grab"
-            style={{ touchAction: 'pan-x pan-y', maskImage: cardRowMask, WebkitMaskImage: cardRowMask }}
+            style={{ touchAction: 'pan-x pan-y' }}
             role="region"
             aria-label="Monthly photo cards"
           >
@@ -655,7 +584,7 @@ export default function YearInReview() {
                   {...(!hasEntered && { initial: { opacity: 0, y: 20 } })}
                   animate={{ opacity: 1, y: transform.y, scale: transform.scale, boxShadow: transform.boxShadow }}
                   transition={!hasEntered
-                    ? { duration: 0.5, delay: 0.6 + index * 0.06, ease: [0.25, 0.1, 0.25, 1] }
+                    ? { duration: 0.5, delay: 0.35 + index * 0.05, ease: [0.25, 0.1, 0.25, 1] }
                     : { type: 'spring', stiffness: 400, damping: 30 }
                   }
                   style={{ zIndex: transform.zIndex, ...(selectedId === month.id && { opacity: 0 }) }}
@@ -706,7 +635,7 @@ export default function YearInReview() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 1.1, ease: [0.25, 0.1, 0.25, 1] }}
+          transition={{ duration: 0.5, delay: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
           className="mx-auto max-w-3xl px-6 md:px-12"
         >
           <div className="mt-3 flex items-center justify-between">
@@ -738,7 +667,7 @@ export default function YearInReview() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 1.3, ease: [0.25, 0.1, 0.25, 1] }}
+          transition={{ duration: 0.5, delay: 0.9, ease: [0.25, 0.1, 0.25, 1] }}
           className="mx-auto max-w-3xl px-6 md:px-12 pt-16 pb-8"
         >
           <div className="flex flex-col gap-0.5">
@@ -794,7 +723,7 @@ export default function YearInReview() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               onClick={closeModal}
-              className="absolute inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-md"
+              className="absolute inset-0 bg-[var(--overlay-backdrop)] md:backdrop-blur-md"
             />
 
             <motion.div
