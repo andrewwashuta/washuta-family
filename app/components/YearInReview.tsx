@@ -45,9 +45,10 @@ type GalleryCarouselProps = {
   images: Array<{src: string; caption: string; blurDataURL: string}>;
   variant?: 'modal' | 'default';
   onExpandImage?: (url: string) => void;
+  keyboardNavigation?: boolean;
 };
 
-const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCarouselProps) => {
+const GalleryCarousel = ({ images, variant = 'modal', onExpandImage, keyboardNavigation = variant === 'modal' }: GalleryCarouselProps) => {
   const N = images.length;
   const canLoop = N > 1;
   const [displayIndex, setDisplayIndex] = useState(0);
@@ -95,6 +96,23 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
   const prev = (e?: React.MouseEvent) => {
     move(-1, e);
   };
+
+  useEffect(() => {
+    if (!keyboardNavigation || !canLoop) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        move(-1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        move(1);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [canLoop, keyboardNavigation, move]);
 
   const handleAnimationComplete = () => {
     if (!canLoop || trackOffset === 0) return;
@@ -190,6 +208,7 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
               <button
                 onClick={prev}
                 aria-label="Previous image"
+                aria-keyshortcuts="ArrowLeft"
                 className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors`}
               >
                 <IconChevronLeftSmall size={ICON_BUTTON_SIZE} />
@@ -197,6 +216,7 @@ const GalleryCarousel = ({ images, variant = 'modal', onExpandImage }: GalleryCa
               <button
                 onClick={next}
                 aria-label="Next image"
+                aria-keyshortcuts="ArrowRight"
                 className={`${ICON_BUTTON_PADDING} ${ICON_BUTTON_ROUNDED} text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--image-bg)] transition-colors`}
               >
                 <IconChevronRightSmall size={ICON_BUTTON_SIZE} />
@@ -788,6 +808,7 @@ export default function YearInReview() {
                     images={selectedMonth.gallery}
                     variant="modal"
                     onExpandImage={(url) => setExpandedImageUrl(url)}
+                    keyboardNavigation={expandedImageUrl == null}
                   />
                 </motion.div>
               </div>
